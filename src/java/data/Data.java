@@ -11,10 +11,13 @@ import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import static java.lang.Double.NaN;
+import static java.lang.Math.toIntExact;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -42,13 +45,17 @@ import static jcuda.driver.JCudaDriver.cuModuleLoad;
 import jcuda.vec.VecDouble;
 import jdk.nashorn.internal.objects.Global;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  *
  * @author Joanna
  */
 public class Data {
-    private static final String RESULT_PATH = "/home/joanna/Dokumenty/Magisterka/Server/";
+    public static final String MY_PATH = "/media/joanna/Linux/Studia/Magisterka/Server/";
+    public static final String RESOURCE_PATH = MY_PATH+"src/resources/";
+    public static final String RESULT_PATH = MY_PATH+"results/";
     private static final double DEFAULT_AREA_DIMENSION = 100;
     private static final double DEFAULT_GRID = 1;
     
@@ -72,7 +79,43 @@ public class Data {
     private int N;
     private JSONObject result;
     
+    public Data(){
+        loadDemo();
+    }
+    
     public Data(
+    double wind_speed_horizontal_,
+    double wind_direction_,
+    double release_height_,
+    double source_strength_,
+    double refflection_co_,
+    int stability_class_num_,
+    double z0_,
+    double a_,
+    double b_,
+    double p_,
+    double q_,
+    double ... optional) throws IOException {
+        double area_dimension_ = optional.length > 0 ? optional[0] : DEFAULT_AREA_DIMENSION;
+        double grid_ = optional.length > 1 ? optional[1] : DEFAULT_GRID;
+        
+        init(wind_speed_horizontal_,
+        wind_direction_,
+        release_height_,
+        source_strength_,
+        refflection_co_,
+        stability_class_num_,
+        z0_,
+        a_,
+        b_,
+        p_,
+        q_,
+        area_dimension_,
+        grid_);
+
+    }
+    
+    private void init(
     double wind_speed_horizontal_,
     double wind_direction_,
     double release_height_,
@@ -104,6 +147,56 @@ public class Data {
         this.grid = grid_;
         this.N = (int) (area_dimension_/grid);
         this.d = release_height_*(3.0/4.0);
+
+    }
+    
+    public void loadDemo(){
+         JSONParser parser = new JSONParser();
+
+        try {
+            String absolutePath = RESOURCE_PATH+"input.json"; //relative path
+
+            Object obj = parser.parse(new FileReader(absolutePath));
+
+            JSONObject jsonObject = (JSONObject) obj;
+            System.out.println(jsonObject);
+
+            double wind_speed_horizontal = (Long) jsonObject.get("wind_speed_horizontal");
+            double wind_direction = (Long) jsonObject.get("wind_direction");
+            double release_height = (Long) jsonObject.get("release_height");
+            double source_strength = (Double) jsonObject.get("source_strength");
+            double refflection_co = (Long) jsonObject.get("refflection_co");
+            int stability_class_num = toIntExact((Long)jsonObject.get("stability_class_num"));
+            double z0 = (Double) jsonObject.get("z0");
+            double a = (Double) jsonObject.get("a");
+            double b = (Double) jsonObject.get("b");
+            double p = (Double) jsonObject.get("p");
+            double q = (Double) jsonObject.get("q");
+            double area_dimension = (Long) jsonObject.get("area_dimension");
+            double grid = (Double) jsonObject.get("grid");
+            
+            init(wind_speed_horizontal, 
+            wind_direction, 
+            release_height,
+            source_strength,
+            refflection_co,
+            stability_class_num,
+            z0,
+            a,
+            b,
+            p,
+            q,
+            area_dimension,
+            grid);
+            
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
 
     }
     
@@ -633,8 +726,8 @@ public class Data {
         SimpleDateFormat sdf = new SimpleDateFormat("DD-MM_HH-mm");
         
 
-        String csvFile3d = RESULT_PATH+"results/"+sdf.format(cal.getTime()) +"3d.csv";
-        String csvFile2d = RESULT_PATH+"results/"+sdf.format(cal.getTime()) +"2d.csv";
+        String csvFile3d = RESULT_PATH+sdf.format(cal.getTime()) +"3d.csv";
+        String csvFile2d = RESULT_PATH+sdf.format(cal.getTime()) +"2d.csv";
         FileWriter writer = new FileWriter(csvFile3d);
         FileWriter writer2 = new FileWriter(csvFile2d);
 
@@ -657,17 +750,22 @@ public class Data {
             int iz = (int) Math.floor((double)(i/(N*N)));
             int iy = (int) Math.floor((double)(i%(N*N)/N));
             int ix = (int) Math.floor((double)(i%(N*N)%N));
+            
+            int x = (int)((ix - (0.5*N))*grid);
+            int y = (int)((iy - (0.5*N))*grid);
+            int z = (int)((iz - (0.5*N))*grid);
+            
                 //System.out.println(i+", "+j+", "+k+", "+hostOutput[index]); 
             if(hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i] ){
                 
                 
                 //Save record to file
-                CSVUtils.writeLine(writer, Arrays.asList(Integer.toString(ix), Integer.toString(iy), 
-                        Integer.toString(iz), String.valueOf(hostOutput[i])));
+                CSVUtils.writeLine(writer, Arrays.asList(Integer.toString(x), Integer.toString(y), 
+                        Integer.toString(z), String.valueOf(hostOutput[i])));
                 
                 if(dim == DIMENSION.THREE){
                     //Save to variable
-                    result.put(ix+","+iy+","+iz,hostOutput[i]);
+                    result.put(x+","+y+","+z,hostOutput[i]);
                 }
                 result3d[ix][iy][iz] = hostOutput[i];
                 result2d[ix][iy] = result2d[ix][iy] + hostOutput[i];
@@ -678,30 +776,34 @@ public class Data {
             }
                 
         }
-        for(int x = 0; x < N; x++){
-            for(int y = 0; y < N; y++){
-                double value = result2d[x][y] / max;
+        for(int x1 = 0; x1 < N; x1++){
+            for(int y1 = 0; y1 < N; y1++){
+                
+                int x = (int)((x1 - (0.5*N))*grid);
+                int y = (int)((y1 - (0.5*N))*grid);
+                
+                double value = result2d[x1][y1] / max;
                 int [] color1 = {171, 255, 196};
                 int [] color2 = {255, 34, 34};
                 int colorRGB[] = getColor(color1, color2, value, 255);
                 int rgb[] = new int[10];
                 int color =  (colorRGB[1] << 16) | (colorRGB[2] << 8) | colorRGB[3];
                 Arrays.fill(rgb, color);
-                img.setRGB(x, y, color);
+                img.setRGB(x1, y1, color);
 
                 //Save record to file
                 CSVUtils.writeLine(writer2, Arrays.asList(Integer.toString(x), Integer.toString(y), 
-                         String.valueOf(result2d[x][y])));
+                         String.valueOf(result2d[x1][y1])));
                 
                 if(dim == DIMENSION.TWO){
                     //Save to variable
-                    result.put(x+","+y,result2d[x][y]);
+                    result.put(x+","+y,result2d[x1][y1]);
                 }
     
             }
         }
         // retrieve image
-    File outputfile = new File(RESULT_PATH+"results/"+sdf.format(cal.getTime())+".bmp");
+    File outputfile = new File(RESULT_PATH+sdf.format(cal.getTime())+".bmp");
     ImageIO.write(img, "png", outputfile);
         
         writer.flush();

@@ -1,0 +1,11 @@
+{
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "match": "\\.js$",
+                "cmd": "cd ${cwd}/web && webpack"
+            }
+        ]
+    },
+    "git.ignoreLimitWarning": true
+}

@@ -21,6 +21,9 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+<<<<<<< HEAD
 /web/node_modules/
 /web/cesium/
 /results/
+=======
+>>>>>>> b5fe075b0244268347343a9163d0868d134ddf7c

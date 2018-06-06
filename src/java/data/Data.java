@@ -758,14 +758,12 @@ public class Data {
                 //System.out.println(i+", "+j+", "+k+", "+hostOutput[index]); 
             if(hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i] ){
                 
-                
-                //Save record to file
-                CSVUtils.writeLine(writer, Arrays.asList(Integer.toString(x), Integer.toString(y), 
-                        Integer.toString(z), String.valueOf(hostOutput[i])));
-                
                 if(dim == DIMENSION.THREE){
                     //Save to variable
                     result.put(x+","+y+","+z,hostOutput[i]);
+                    //Save record to file
+                    CSVUtils.writeLine(writer, Arrays.asList(Integer.toString(x), Integer.toString(y), 
+                        Integer.toString(z), String.valueOf(hostOutput[i])));
                 }
                 result3d[ix][iy][iz] = hostOutput[i];
                 result2d[ix][iy] = result2d[ix][iy] + hostOutput[i];

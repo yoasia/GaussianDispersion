@@ -7,10 +7,39 @@ import StepLabel from '@material-ui/core/StepLabel';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
+import InputAdornment from '@material-ui/core/InputAdornment';
+import MenuItem from '@material-ui/core/MenuItem';
 import EventEmitter from 'event-emitter';
 
 
 var emitter;
+
+const weatherStability=[
+    {
+        value: 1,
+        label: 'Very unstable',
+    },
+    {
+        value: 2,
+        label: 'Moderately unstable',
+    },
+    {
+        value: 3,
+        label: 'Slightly unstable',
+    },
+    {
+        value: 4,
+        label: 'Neutral',
+    },
+    {
+        value: 5,
+        label: 'Moderately stable',
+    },
+    {
+        value: 6,
+        label: 'Very stable',
+    }
+]
 
 const styles = theme => ({
   root: {
@@ -37,7 +66,7 @@ const styles = theme => ({
 });
 
 function getSteps() {
-  return ['Select location', 'Create an ad group', 'Create an ad'];
+  return ['Gas source', 'Weather', 'Other parametrs'];
 }
 
 function emitEventDraggableMarker(step){
@@ -59,28 +88,29 @@ class Steps extends React.Component {
         this.state = {
             activeStep: 0,
             skipped: new Set(),
-            data:{
-                lon:null, 
-                lat:null,
-                windSpeed:null,
-                windDirecrion:null,
-                height:null,
-                sourceStrength:null,
-                refflectionCo:null,
-                weatherStabilityClass:null,
+            parameters:{
+                lon:20, 
+                lat:52,
+                windSpeed:5,
+                windDirection:30,
+                height:2,
+                sourceStrength:5,
+                refflectionCo:1,
+                weatherStabilityClass:1,
                 areaDimension:null,
-                grid:null
+                grid:10
             }
           };
          
-        this.lonFieldVal = null;
-        this.latFieldVal = null;
+        this.textFieldValues = Object.assign({}, this.state.parameters);
+
         emitter = this.props.emitter;
 
         this.getStepContent = this.getStepContent.bind(this);
         this.setLonLat = this.setLonLat.bind(this);
-        this.setLon = this.setLon.bind(this);
-        this.setLat = this.setLat.bind(this);
+        this.handleChange = this.handleChange.bind(this);
+        this.onFinish = this.onFinish.bind(this);
+
     }
 
     
@@ -91,6 +121,10 @@ class Steps extends React.Component {
     componentWillMount() {
         emitter.on('lonLatChanged', this.setLonLat);
     }
+
+    onFinish(){
+      this.props.onFinish(this.state.parameters);
+    }
     
     /**
      * 
@@ -98,71 +132,158 @@ class Steps extends React.Component {
      * @param {number} lat 
      */
     setLonLat(lon, lat){
-        var data = this.state.data;
+        var parameters = this.state.parameters;
 
-        [this.lonFieldVal, this.latFieldVal] = [lon, lat];
-        [data.lon, data.lat] = [lon, lat];
+        [this.textFieldValues.lon, this.textFieldValues.lat] = [lon, lat];
+        [parameters.lon, parameters.lat] = [lon, lat];
 
-        this.setState({data});
+        this.setState({parameters});
     }
 
     /**
      * 
-     * @param {Object} event 
+     * @param {string} name 
      */
-    setLon(event){
-        this.lonFieldVal = event.target.value;
-        
-        if(!isNaN(this.lonFieldVal)){
-            var data = this.state.data;
-            data.lon = this.lonFieldVal;
-            emitter.emit("lonLatChanged", data.lon, data.lat);
+    handleChange = name => event => {
+        this.textFieldValues[name] = event.target.value;
+
+        if(!isNaN(this.textFieldValues[name])){
+
+            var parameters = this.state.parameters;
+            parameters[name] = event.target.value;
+
+            if(name == "lon" || name == "lat"){
+                emitter.emit("lonLatChanged", parameters.lon, parameters.lat);
+            } else{
+                this.setState({parameters});
+            }
+    
         }
-    }
-    /**
-     * 
-     * @param {Object} event 
-     */
-    setLat(event){
-        this.latFieldVal = event.target.value;
-        
-        if(!isNaN(this.latFieldVal)){
-            var data = this.state.data;
-            data.lat = this.latFieldVal;
-            emitter.emit("lonLatChanged", data.lon, data.lat);
-        }
-    }
+      };    
+
 
   getStepContent(step) {
     const { classes } = this.props;
     switch (step) {
       case 0:
-        return (<form className={classes.container} noValidate autoComplete="off">
-        <TextField
-          id="lonTextField"
-          label="Longitude"
-          defaultValue="20"
-          value={this.lonFieldVal}
-          className={classes.textField}
-          onChange={this.setLon}
-          margin="normal"
-          error={(isNaN(this.lonFieldVal)? true:false )}
-        />
-        <TextField
-          id="latTextField"
-          label="Latitude"
-          defaultValue="52"
-          value={this.latFieldVal}
-          onChange={this.setLat}
-          className={classes.textField}
-          margin="normal"
-          error={(isNaN(this.latFieldVal)? true:false )}
-        />
-      </form>);
+        return (
+        <form className={classes.container} noValidate autoComplete="off">
+            <TextField
+            id="lonTextField"
+            label="Longitude"
+            value={this.textFieldValues.lon}
+            className={classes.textField}
+            onChange={this.handleChange('lon')}
+            margin="normal"
+            error={(isNaN(this.textFieldValues.lon)? true:false )}
+            />
+            <TextField
+            id="latTextField"
+            label="Latitude"
+            value={this.textFieldValues.lat}
+            onChange={this.handleChange('lat')}
+            className={classes.textField}
+            margin="normal"
+            error={(isNaN(this.textFieldValues.lat)? true:false )}
+            />
+            <TextField
+            id="heightTextField"
+            label="Height of the source"
+            value={this.textFieldValues.height}
+            onChange={this.handleChange('height')}
+            className={classes.textField}
+            margin="normal"
+            error={(isNaN(this.textFieldValues.height)? true:false )}
+            InputProps={{
+                endAdornment: <InputAdornment position="end">m</InputAdornment>,
+            }}
+            />
+            <TextField
+            id="srcStrTextField"
+            label="Gas emmission"
+            value={this.textFieldValues.sourceStrength}
+            onChange={this.handleChange('sourceStrength')}
+            className={classes.textField}
+            margin="normal"
+            error={(isNaN(this.textFieldValues.sourceStrength)? true:false )}
+            InputProps={{
+                endAdornment: <InputAdornment position="end">grams/seconds</InputAdornment>,
+            }}
+            />
+        </form>);
       case 1:
-        return 'What is an ad group anyways?';
+        return (
+            <form className={classes.container} noValidate autoComplete="off">
+                <TextField
+                id="speedTextField"
+                label="Wind speed"
+                value={this.textFieldValues.windSpeed}
+                className={classes.textField}
+                onChange={this.handleChange('windSpeed')}
+                margin="normal"
+                error={(isNaN(this.textFieldValues.windSpeed)? true:false )}
+                InputProps={{
+                    endAdornment: <InputAdornment position="end">m/s</InputAdornment>,
+                }}
+                />
+                <TextField
+                id="directionTextField"
+                label="Wind direction"
+                helperText="to North = 0 degree "
+                value={this.textFieldValues.windDirection}
+                onChange={this.handleChange('windDirection')}
+                className={classes.textField}
+                margin="normal"
+                error={(isNaN(this.textFieldValues.windDirection)? true:false )}
+                InputProps={{
+                    endAdornment: <InputAdornment position="end">degrees</InputAdornment>,
+                }}
+                />
+                <TextField
+                id="stabilityTextField"
+                select
+                label="Weather stability"
+                className={classes.textField}
+                value={this.textFieldValues.weatherStabilityClass}
+                onChange={this.handleChange('weatherStabilityClass')}
+                SelectProps={{
+                    MenuProps: {
+                        className: classes.menu,
+                    },
+                }}
+                helperText="Select weather stability"
+                margin="normal"
+                >
+                {weatherStability.map(option => (
+                    <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                    </MenuItem>
+                ))}
+                </TextField>
+                
+            </form>);
       case 2:
-        return 'This is the bit I really care about!';
+        return (
+            <form className={classes.container} noValidate autoComplete="off">
+                <TextField
+                id="gridTextField"
+                label="Grid"
+                value={this.textFieldValues.grid}
+                className={classes.textField}
+                type="number"
+                onChange={this.handleChange('grid')}
+                margin="normal"
+                error={(isNaN(this.textFieldValues.grid)? true:false )}
+                InputLabelProps={{
+                    shrink: true,
+                    inputProps: { min: 5, max: 200 }
+                }}
+                InputProps={{
+                    endAdornment: <InputAdornment position="end">m</InputAdornment>,
+                }}
+                />
+                </form>
+        );
       default:
         return 'Unknown step';
     }
@@ -176,26 +297,29 @@ class Steps extends React.Component {
     return this.state.skipped.has(step);
   }
 
-  
 
   handleNext = () => {
     const { activeStep } = this.state;
-    emitEventDraggableMarker(activeStep);
     let { skipped } = this.state;
-
+    emitEventDraggableMarker(activeStep + 1);
+    
     if (this.isStepSkipped(activeStep)) {
-      skipped = new Set(skipped.values());
-      skipped.delete(activeStep);
+        skipped = new Set(skipped.values());
+        skipped.delete(activeStep);
     }
     this.setState({
-      activeStep: activeStep + 1,
-      skipped,
+        activeStep: activeStep + 1,
+        skipped,
     });
+
+    if(activeStep > 1){
+      this.onFinish()
+    }
   };
 
   handleBack = () => {
     const { activeStep } = this.state;
-    emitEventDraggableMarker(activeStep);
+    emitEventDraggableMarker(activeStep - 1);
 
     this.setState({
       activeStep: activeStep - 1,
@@ -269,23 +393,13 @@ class Steps extends React.Component {
                 >
                   Back
                 </Button>
-                {this.isStepOptional(activeStep) && (
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={this.handleSkip}
-                    className={classes.button}
-                  >
-                    Skip
-                  </Button>
-                )}
                 <Button
                   variant="contained"
                   color="primary"
                   onClick={this.handleNext}
                   className={classes.button}
                 >
-                  {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
+                  {activeStep === steps.length - 1 ? 'Show Dispersion' : 'Next'}
                 </Button>
               </div>
             </div>

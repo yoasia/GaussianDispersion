@@ -24,6 +24,7 @@ class Map extends React.Component {
           this.emitter = this.props.emitter;
 
           this.setMarkerLonLat = this.setMarkerLonLat.bind(this);
+          this.setDraggable = this.setDraggable.bind(this);
      
     }
     refmarker = React.createRef()

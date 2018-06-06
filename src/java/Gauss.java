@@ -50,7 +50,6 @@ public class Gauss extends HttpServlet {
         String s_b = request.getParameter("b");
         String s_p = request.getParameter("p");
         String s_q = request.getParameter("q");
-        String s_area_dim = request.getParameter("dim");
         String s_grid = request.getParameter("grid");
         String s_dimension = request.getParameter("dimension");
 
@@ -82,7 +81,6 @@ public class Gauss extends HttpServlet {
                 json.put("b",s_b);
                 json.put("p",s_p);
                 json.put("q",s_q);
-                json.put("dim",s_area_dim);
                 json.put("grid",s_grid);
                 json.put("dimension",s_dimension);
                  
@@ -106,15 +104,15 @@ public class Gauss extends HttpServlet {
         double b = Double.parseDouble(s_b);
         double p = Double.parseDouble(s_p);
         double q = Double.parseDouble(s_q);
-        double area_dimension = 0.0;
+        double dimension = Double.parseDouble(s_dimension);
         double grid = 0.0;
         
-        if(s_area_dim != null)
-            area_dimension = Double.parseDouble(s_area_dim);
+        if(s_dimension != null)
+            dimension = Double.parseDouble(s_dimension);
         if(s_grid != null)
             grid = Double.parseDouble(s_grid);
 
-        if(s_area_dim != null && s_grid != null){
+        if(s_dimension != null && s_grid != null){
             data = new Data(wind_speed_horizontal, 
             wind_direction, 
             release_height,
@@ -126,10 +124,10 @@ public class Gauss extends HttpServlet {
             b,
             p,
             q,
-            area_dimension,
+            dimension,
             grid);
         }
-        else if(s_area_dim!=null){
+        else if(s_dimension!=null){
             data = new Data(wind_speed_horizontal, 
             wind_direction, 
             release_height,
@@ -141,7 +139,7 @@ public class Gauss extends HttpServlet {
             b,
             p,
             q,
-            area_dimension);
+            dimension);
         }
         else{
 
@@ -158,11 +156,7 @@ public class Gauss extends HttpServlet {
                 q);
         }
         
-        if(s_dimension == "2d")
-            data.calculate(DIMENSION.TWO);
-        else
-            data.calculate(DIMENSION.THREE);
-
+        data.calculate(DIMENSION.TWO);
         
         
         try (PrintWriter out = response.getWriter()) {

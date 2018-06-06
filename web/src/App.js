@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom';  
-import axios from 'axios';
 import EventEmitter from 'event-emitter';
 
 import Data from './components/Data';
@@ -15,19 +14,23 @@ class App extends React.Component {
     constructor(props) {
         super(props);
         
-        this.state = { };
+        this.state = { 
+            parameters:null
+        };
+
         this.emitter = new EventEmitter();
+        this.setUserParameters = this.setUserParameters.bind(this);
     }
 
-    componentWillMount(){
-        
+    setUserParameters(parameters){
+        this.setState({parameters});
     }
 
     render() {
         return (
             <div id='app'>
-                 <Data emitter={this.emitter}></Data>
-                 <Steps emitter={this.emitter} className={'panel'}></Steps>
+                 <Data emitter={this.emitter} parameters={this.state.parameters}></Data>
+                 <Steps onFinish={this.setUserParameters} emitter={this.emitter} className={'panel'}></Steps>
             </div>      
         );
     }

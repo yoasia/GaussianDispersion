@@ -60,11 +60,6 @@ public class Gauss extends HttpServlet {
         || s_source_strength == null
         || s_refflection_co == null
         || s_stability_class_num == null
-        || s_a == null
-        || s_z0 == null
-        || s_b == null
-        || s_p == null
-        || s_q == null
         ){
             try (PrintWriter out = response.getWriter()) {
                 JSONObject json = new JSONObject();
@@ -76,11 +71,6 @@ public class Gauss extends HttpServlet {
                 json.put("source_strength",s_source_strength);
                 json.put("refflection_co",s_refflection_co);
                 json.put("stability_class_num",s_stability_class_num);
-                json.put("z0",s_z0);
-                json.put("a",s_a);
-                json.put("b",s_b);
-                json.put("p",s_p);
-                json.put("q",s_q);
                 json.put("grid",s_grid);
                 json.put("dimension",s_dimension);
                  
@@ -99,21 +89,17 @@ public class Gauss extends HttpServlet {
         double source_strength = Double.parseDouble(s_source_strength);
         double refflection_co = Double.parseDouble(s_refflection_co);
         int stability_class_num = Integer.parseInt(s_stability_class_num);
-        double z0 = Double.parseDouble(s_z0);
-        double a = Double.parseDouble(s_a);
-        double b = Double.parseDouble(s_b);
-        double p = Double.parseDouble(s_p);
-        double q = Double.parseDouble(s_q);
-        double dimension = Double.parseDouble(s_dimension);
-        double grid = 0.0;
+        double z0 = Double.parseDouble((s_z0 == null) ? "0": s_z0);
+        double a = Double.parseDouble((s_a == null) ? "0": s_a);
+        double b = Double.parseDouble((s_b == null) ? "0": s_b);
+        double p = Double.parseDouble((s_p == null) ? "0": s_p);
+        double q = Double.parseDouble((s_q == null) ? "0": s_q);
+        double dimension = Double.parseDouble((s_dimension == null) ? "2000": s_dimension);
+        double grid = Double.parseDouble((s_grid == null) ? "10": s_grid);;
         
-        if(s_dimension != null)
-            dimension = Double.parseDouble(s_dimension);
-        if(s_grid != null)
-            grid = Double.parseDouble(s_grid);
 
-        if(s_dimension != null && s_grid != null){
-            data = new Data(wind_speed_horizontal, 
+
+        data = new Data(wind_speed_horizontal, 
             wind_direction, 
             release_height,
             source_strength,
@@ -126,35 +112,7 @@ public class Gauss extends HttpServlet {
             q,
             dimension,
             grid);
-        }
-        else if(s_dimension!=null){
-            data = new Data(wind_speed_horizontal, 
-            wind_direction, 
-            release_height,
-            source_strength,
-            refflection_co,
-            stability_class_num,
-            z0,
-            a,
-            b,
-            p,
-            q,
-            dimension);
-        }
-        else{
-
-            data = new Data(wind_speed_horizontal, 
-                wind_direction, 
-                release_height,
-                source_strength,
-                refflection_co,
-                stability_class_num,
-                z0,
-                a,
-                b,
-                p,
-                q);
-        }
+        
         
         data.calculate(DIMENSION.TWO);
         

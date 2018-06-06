@@ -244,9 +244,9 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
     if (ix<n && iy<n && iz<n)
     {
         result[resultIndex] = Q/(2*u*PI*sigY*sigZ) * //1
-        exp(pow(-y, 2)/(2.0*pow(sigY, 2))) * //2
+        exp(pow(-crosswind, 2)/(2.0*pow(sigY, 2))) * //2
         (exp(-1.0)*(pow(z - H, 2)/(2.0*pow(sigZ, 2))) + //3a
-        exp((-1.0)*pow(z + H - 2.0*d, 2)/2.0*pow(sigZ, 2))); //3b
+        exp((-1.0)*pow(z + H, 2)/2.0*pow(sigZ, 2))); //3b
     }  
 }
 

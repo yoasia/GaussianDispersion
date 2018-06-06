@@ -20,7 +20,7 @@ class Data extends React.Component {
 
     getData(){
         var self = this;
-        axios.get('/gauss', {
+        axios.get('/WEB-INF/gauss', {
             params: {
                 wind_speed: this.props.parameters.windSpeed,
                 wind_angle: this.props.parameters.windDirection,

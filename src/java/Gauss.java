@@ -13,6 +13,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 /**
@@ -52,6 +53,8 @@ public class Gauss extends HttpServlet {
         String s_q = request.getParameter("q");
         String s_grid = request.getParameter("grid");
         String s_dimension = request.getParameter("dimension");
+        String s_lon = request.getParameter("lon");
+        String s_lat = request.getParameter("lat");
 
         //Check if user set every parametr
         if(s_wind_speed_horizontal == null
@@ -60,6 +63,8 @@ public class Gauss extends HttpServlet {
         || s_source_strength == null
         || s_refflection_co == null
         || s_stability_class_num == null
+        || s_lon == null
+        || s_lat == null
         ){
             try (PrintWriter out = response.getWriter()) {
                 JSONObject json = new JSONObject();
@@ -73,6 +78,8 @@ public class Gauss extends HttpServlet {
                 json.put("stability_class_num",s_stability_class_num);
                 json.put("grid",s_grid);
                 json.put("dimension",s_dimension);
+                json.put("s_lon",s_dimension);
+                json.put("s_lat",s_dimension);
                  
                  // finally output the json string       
                 out.print(json);
@@ -89,11 +96,14 @@ public class Gauss extends HttpServlet {
         double source_strength = Double.parseDouble(s_source_strength);
         double refflection_co = Double.parseDouble(s_refflection_co);
         int stability_class_num = Integer.parseInt(s_stability_class_num);
+        double lon = Double.parseDouble(s_lon);
+        double lat = Double.parseDouble(s_lat);
         double z0 = Double.parseDouble((s_z0 == null) ? "0": s_z0);
         double a = Double.parseDouble((s_a == null) ? "0": s_a);
         double b = Double.parseDouble((s_b == null) ? "0": s_b);
         double p = Double.parseDouble((s_p == null) ? "0": s_p);
         double q = Double.parseDouble((s_q == null) ? "0": s_q);
+        
         double dimension = Double.parseDouble((s_dimension == null) ? "2000": s_dimension);
         double grid = Double.parseDouble((s_grid == null) ? "10": s_grid);;
         
@@ -110,6 +120,8 @@ public class Gauss extends HttpServlet {
             b,
             p,
             q,
+            lon, 
+            lat,
             dimension,
             grid);
         
@@ -118,7 +130,7 @@ public class Gauss extends HttpServlet {
         
         
         try (PrintWriter out = response.getWriter()) {
-            JSONObject json = data.getResult();
+            JSONArray json = data.getResult();
              
              // finally output the json string       
             out.print(json);

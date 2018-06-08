@@ -5,6 +5,8 @@
  */
 
 import data.DIMENSION;
+import data.Data;
+import data.JCudaGauss;
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.json.JsonObject;
@@ -13,6 +15,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 /**
@@ -21,7 +24,8 @@ import org.json.simple.JSONObject;
  */
 @WebServlet(urlPatterns = {"/gaussDemo3d"})
 public class gaussDemo3d extends HttpServlet {
-
+    private JCudaGauss gaussObject;
+    private static Data dataObject;
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -35,6 +39,8 @@ public class gaussDemo3d extends HttpServlet {
             throws ServletException, IOException {
         
         
+        dataObject = new Data();
+        dataObject.calculate(DIMENSION.THREE);
         
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
@@ -42,7 +48,7 @@ public class gaussDemo3d extends HttpServlet {
             /* TODO output your page here. You may use following sample code. */
 
             //create Json Object
-            JSONObject json = data.Main.main(DIMENSION.THREE);
+            JSONArray json = dataObject.getResult();
             String str = json.toString();
             out.flush();
             // finally output the json string       

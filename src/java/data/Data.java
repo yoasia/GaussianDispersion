@@ -44,6 +44,7 @@ import static jcuda.driver.JCudaDriver.cuModuleGetFunction;
 import static jcuda.driver.JCudaDriver.cuModuleLoad;
 import jcuda.vec.VecDouble;
 import jdk.nashorn.internal.objects.Global;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -56,8 +57,8 @@ public class Data {
     public static final String MY_PATH = "/media/joanna/Linux/Studia/Magisterka/Server/";
     public static final String RESOURCE_PATH = MY_PATH+"src/resources/";
     public static final String RESULT_PATH = MY_PATH+"results/";
-    private static final double DEFAULT_AREA_DIMENSION = 100;
-    private static final double DEFAULT_GRID = 1;
+    private static final double DEFAULT_AREA_DIMENSION = 500;
+    private static final double DEFAULT_GRID = 2;
     
     private double wind_speed_horizontal;
     private double wind_direction;
@@ -76,8 +77,10 @@ public class Data {
     private double area_dimension;
     private double grid;
     private double d;
+    private double lon;
+    private double lat;
     private int N;
-    private JSONObject result;
+    private JSONArray result;
     
     public Data(){
         loadDemo();
@@ -95,6 +98,8 @@ public class Data {
     double b_,
     double p_,
     double q_,
+    double lon_,
+    double lat_,
     double ... optional) throws IOException {
         double area_dimension_ = optional.length > 0 ? optional[0] : DEFAULT_AREA_DIMENSION;
         double grid_ = optional.length > 1 ? optional[1] : DEFAULT_GRID;
@@ -110,8 +115,9 @@ public class Data {
         b_,
         p_,
         q_,
+        lon_, lat_,
         area_dimension_,
-        grid_);
+        grid_ );
 
     }
     
@@ -127,6 +133,8 @@ public class Data {
     double b_,
     double p_,
     double q_,
+    double lon_,
+    double lat_,
     double ... optional) throws IOException {
         this.wind_speed_horizontal = wind_speed_horizontal_;
         this.wind_direction = wind_direction_;
@@ -139,6 +147,8 @@ public class Data {
         this.p = p_;
         this.q = q_;
         this.z0 = z0_;
+        this.lon = lon_;
+        this.lat = lat_;
         
         double area_dimension_ = optional.length > 0 ? optional[0] : DEFAULT_AREA_DIMENSION;
         double grid_ = optional.length > 1 ? optional[1] : DEFAULT_GRID;
@@ -172,6 +182,8 @@ public class Data {
             double b = (Double) jsonObject.get("b");
             double p = (Double) jsonObject.get("p");
             double q = (Double) jsonObject.get("q");
+            double lon = (Double) jsonObject.get("lon");
+            double lat = (Double) jsonObject.get("lat");
             double area_dimension = (Long) jsonObject.get("area_dimension");
             double grid = (Double) jsonObject.get("grid");
             
@@ -186,6 +198,8 @@ public class Data {
             b,
             p,
             q,
+            lon,
+            lat,
             area_dimension,
             grid);
             
@@ -200,7 +214,7 @@ public class Data {
 
     }
     
-    public JSONObject getResult() {
+    public JSONArray getResult() {
         return result;
     }
 
@@ -320,236 +334,7 @@ public class Data {
     public void calculate(DIMENSION dim) throws IOException{
         calculateGauss(dim);
     }
-    
-    private void calculateK(){
-        // Enable exceptions and omit all subsequent error checks
-        JCudaDriver.setExceptionsEnabled(true);
-
-        // Initialize the driver and create a context for the first device.
-        cuInit(0);
-        CUdevice device = new CUdevice();
-        cuDeviceGet(device, 0);
-        CUcontext context = new CUcontext();
-        cuCtxCreate(context, 0, device);
-
-        // Afterwards, initialize the vector library, which will
-        // attach to the current context
-        VecDouble.init();
         
-        // Allocate and fill the host input data
-        int n = N;
-        double[] midOutput = new double[n];
-
-        double X[] = new double[n];
-        double Y[] = new double[n];
-        double Z0[] = new double[n];
-
-
-        for(int i = 0; i < n; i++)
-        {
-            X[i] = (double)(i - 0.5*n) * grid * 0.53;
-            Y[i] = (double)-0.22;
-            Z0[i] = (double)10.0*z0;
-            midOutput[i] = (double)0;
-        }
-        
-                // Allocate the device pointers, and copy the
-        // host input data to the device
-        CUdeviceptr deviceX = new CUdeviceptr();
-        cuMemAlloc(deviceX, n * Sizeof.DOUBLE);
-        cuMemcpyHtoD(deviceX, Pointer.to(X), n * Sizeof.DOUBLE);
-
-        CUdeviceptr deviceY = new CUdeviceptr();
-        cuMemAlloc(deviceY, n * Sizeof.DOUBLE); 
-        cuMemcpyHtoD(deviceY, Pointer.to(Y), n * Sizeof.DOUBLE);
-        
-        CUdeviceptr deviceMid = new CUdeviceptr();
-        cuMemAlloc(deviceMid, n * Sizeof.DOUBLE); 
-        cuMemcpyHtoD(deviceMid, Pointer.to(midOutput), n * Sizeof.DOUBLE);
-        
-        CUdeviceptr deviceZ0 = new CUdeviceptr();
-        cuMemAlloc(deviceZ0, n * Sizeof.DOUBLE); 
-        cuMemcpyHtoD(deviceZ0, Pointer.to(Z0), n * Sizeof.DOUBLE);
-
-        CUdeviceptr deviceResult = new CUdeviceptr();
-        cuMemAlloc(deviceResult, n * Sizeof.DOUBLE);
-
-        // Perform the vector operations
-
-        VecDouble.pow(n, deviceMid, deviceX, deviceY);              // x^-0.22 
-        VecDouble.pow(n, deviceResult, deviceZ0, deviceMid);        // ((10*z0)^(0.53*x))^-0.22  
-        
-        // Allocate host output memory and copy the device output
-        // to the host.
-        double K[] = new double[n];
-        cuMemcpyDtoH(Pointer.to(K), deviceResult, n * Sizeof.DOUBLE);
-        cuMemcpyDtoH(Pointer.to(X), deviceX, n * Sizeof.DOUBLE);
-        cuMemcpyDtoH(Pointer.to(Y), deviceY, n * Sizeof.DOUBLE);
-        cuMemcpyDtoH(Pointer.to(Z0), deviceZ0, n * Sizeof.DOUBLE);
-
-
-        this.K = K;
-        
-        // Clean up.
-        cuMemFree(deviceX);
-        cuMemFree(deviceY);
-        cuMemFree(deviceZ0);
-        cuMemFree(deviceMid);
-        cuMemFree(deviceResult);
-        VecDouble.shutdown();
-        
-    }
-    
-    
-    private void calculateStdZ(){
-        // Enable exceptions and omit all subsequent error checks
-        JCudaDriver.setExceptionsEnabled(true);
-
-        // Initialize the driver and create a context for the first device.
-        cuInit(0);
-        CUdevice device = new CUdevice();
-        cuDeviceGet(device, 0);
-        CUcontext context = new CUcontext();
-        cuCtxCreate(context, 0, device);
-
-
-        // Afterwards, initialize the vector library, which will
-        // attach to the current context
-        VecDouble.init();
-        
-        // Allocate and fill the host input data
-        int n = N;
-        double X[] = new double[n];
-        double B[] = new double[n];
-        for(int i = 0; i < n; i++)
-        {
-            X[i] = (double)(i - 0.5*n) * grid * 0.53;
-            B[i] = (double)b;
-        }
-        
-                // Allocate the device pointers, and copy the
-        // host input data to the device
-        CUdeviceptr deviceX = new CUdeviceptr();
-        cuMemAlloc(deviceX, n * Sizeof.DOUBLE);
-        cuMemcpyHtoD(deviceX, Pointer.to(X), n * Sizeof.DOUBLE);
-
-        CUdeviceptr deviceB = new CUdeviceptr();
-        cuMemAlloc(deviceB, n * Sizeof.DOUBLE);
-        cuMemcpyHtoD(deviceB, Pointer.to(B), n * Sizeof.DOUBLE);
-        
-        CUdeviceptr deviceK = new CUdeviceptr();
-        cuMemAlloc(deviceK, n * Sizeof.DOUBLE);
-        cuMemcpyHtoD(deviceK, Pointer.to(this.K), n * Sizeof.DOUBLE);
-        
-
-
-        CUdeviceptr deviceResult = new CUdeviceptr();
-        cuMemAlloc(deviceResult, n * Sizeof.DOUBLE);
-
-        // Perform the vector operations
-
-        VecDouble.pow(n, deviceB, deviceX, deviceB);        // x^b
-        VecDouble.mulScalar(n, deviceK, deviceK, this.a);   // a*K 
-        VecDouble.mul(n, deviceResult, deviceK, deviceB);   // K*a*(x^b)
-        
-        // Allocate host output memory and copy the device output
-        // to the host.
-        double stdZ[] = new double[n];
-        cuMemcpyDtoH(Pointer.to(stdZ), deviceResult, n * Sizeof.DOUBLE);
-
-
-        this.std_deviation_z = stdZ;
-        
-        // Clean up.
-        cuMemFree(deviceX);
-        cuMemFree(deviceB);
-        cuMemFree(deviceResult);
-        VecDouble.shutdown();
-    
-    }
-    
-    private void calculateStdY(){
-        // Enable exceptions and omit all subsequent error checks
-        JCudaDriver.setExceptionsEnabled(true);
-
-        // Initialize the driver and create a context for the first device.
-        cuInit(0);
-        CUdevice device = new CUdevice();
-        cuDeviceGet(device, 0);
-        CUcontext context = new CUcontext();
-        cuCtxCreate(context, 0, device);
-
-        int numElements = (int) (area_dimension/grid);
-
-        // Afterwards, initialize the vector library, which will
-        // attach to the current context
-        VecDouble.init();
-        
-        // Allocate and fill the host input data
-        int n = numElements;
-        double X[] = new double[n];
-        double P[] = new double[n];
-        double Q[] = new double[n];
-        double _10[] = new double[n];
-        for(int i = 0; i < n; i++)
-        {
-            X[i] = (double)(i - 0.5*n) * grid * 0.53;
-            P[i] = (double)p;
-            Q[i] = (double)q;
-            _10[i] = (double)10;
-        }
-        
-                // Allocate the device pointers, and copy the
-        // host input data to the device
-        CUdeviceptr deviceX = new CUdeviceptr();
-        cuMemAlloc(deviceX, n * Sizeof.DOUBLE);
-        cuMemcpyHtoD(deviceX, Pointer.to(X), n * Sizeof.DOUBLE);
-
-        CUdeviceptr deviceP = new CUdeviceptr();
-        cuMemAlloc(deviceP, n * Sizeof.DOUBLE);
-        cuMemcpyHtoD(deviceP, Pointer.to(P), n * Sizeof.DOUBLE);
-        
-        CUdeviceptr deviceK = new CUdeviceptr();
-        cuMemAlloc(deviceK, n * Sizeof.DOUBLE);
-        cuMemcpyHtoD(deviceK, Pointer.to(this.K), n * Sizeof.DOUBLE);
-        
-        CUdeviceptr deviceQ = new CUdeviceptr();
-        cuMemAlloc(deviceQ, n * Sizeof.DOUBLE);
-        cuMemcpyHtoD(deviceQ, Pointer.to(Q), n * Sizeof.DOUBLE);
-        
-        CUdeviceptr device10 = new CUdeviceptr();
-        cuMemAlloc(device10, n * Sizeof.DOUBLE);
-        cuMemcpyHtoD(device10, Pointer.to(_10), n * Sizeof.DOUBLE);
-
-        CUdeviceptr deviceResult = new CUdeviceptr();
-        cuMemAlloc(deviceResult, n * Sizeof.DOUBLE);
-
-        // Perform the vector operations
-
-        VecDouble.pow(n, deviceX, deviceX, deviceQ);        // x^q
-        VecDouble.pow(n, deviceP, device10, deviceP);        // 10^p 
-        VecDouble.mul(n, deviceResult, deviceX, deviceP);   // 10^p * x^q
-        VecDouble.mul(n, deviceResult, deviceResult, deviceK);   // K*10a*(x^b)
-        
-        // Allocate host output memory and copy the device output
-        // to the host.
-        double stdY[] = new double[n];
-        cuMemcpyDtoH(Pointer.to(stdY), deviceResult, n * Sizeof.DOUBLE);
-
-
-        this.std_deviation_y = stdY;
-        
-        // Clean up.
-        cuMemFree(deviceX);
-        cuMemFree(deviceP);
-        cuMemFree(deviceQ);
-        cuMemFree(deviceK);
-        cuMemFree(device10);
-        cuMemFree(deviceResult);
-        VecDouble.shutdown();
-    
-    }
-    
         /**
      * The extension of the given file name is replaced with "ptx".
      * If the file with the resulting name does not exist, it is
@@ -703,7 +488,7 @@ public class Data {
         );
 
         // Call the kernel function.
-       int blockSizeX = 512;
+       int blockSizeX = 1024;
         int gridSizeX = (int)Math.ceil((double)numElements / blockSizeX);
         cuLaunchKernel(function,
             gridSizeX,  1, 1,      // Grid dimension
@@ -733,7 +518,7 @@ public class Data {
 
         CSVUtils.writeLine(writer, Arrays.asList("x", "y", "z", "concentration"));
         CSVUtils.writeLine(writer2, Arrays.asList("x", "y", "concentration"));
-        result = new JSONObject();
+        result = new JSONArray();
         
         BufferedImage img = new BufferedImage(N, N, BufferedImage.TYPE_INT_RGB);
         
@@ -747,6 +532,8 @@ public class Data {
         
         for(int i = 0; i < numElements - 1; i++)
         {
+            JSONObject point = new JSONObject();
+            
             int iz = (int) Math.floor((double)(i/(N*N)));
             int iy = (int) Math.floor((double)(i%(N*N)/N));
             int ix = (int) Math.floor((double)(i%(N*N)%N));
@@ -755,14 +542,21 @@ public class Data {
             int y = (int)((iy - (0.5*N))*grid);
             int z = (int)((iz - (0.5*N))*grid);
             
+            double coordinates[] = metersToDegrees(lon, lat, x, y);
+            
                 //System.out.println(i+", "+j+", "+k+", "+hostOutput[index]); 
             if(hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i] ){
                 
                 if(dim == DIMENSION.THREE){
                     //Save to variable
-                    result.put(x+","+y+","+z,hostOutput[i]);
+                    point.put("lat", coordinates[0]);
+                    point.put("lon", coordinates[1]);
+                    point.put("z", z);
+                    point.put("value", hostOutput[i]);
+                    result.add(point);
+                    
                     //Save record to file
-                    CSVUtils.writeLine(writer, Arrays.asList(Integer.toString(x), Integer.toString(y), 
+                    CSVUtils.writeLine(writer, Arrays.asList(Double.toString(coordinates[1]), Double.toString(coordinates[0]), 
                         Integer.toString(z), String.valueOf(hostOutput[i])));
                 }
                 result3d[ix][iy][iz] = hostOutput[i];
@@ -774,11 +568,16 @@ public class Data {
             }
                 
         }
+        int i = 0;
         for(int x1 = 0; x1 < N; x1++){
             for(int y1 = 0; y1 < N; y1++){
                 
+                JSONObject point = new JSONObject();
+                
                 int x = (int)((x1 - (0.5*N))*grid);
                 int y = (int)((y1 - (0.5*N))*grid);
+                
+                double[] coordinates = metersToDegrees(lon, lat, (double) x, (double) y);
                 
                 double value = result2d[x1][y1] / max;
                 int [] color1 = {171, 255, 196};
@@ -788,15 +587,20 @@ public class Data {
                 int color =  (colorRGB[1] << 16) | (colorRGB[2] << 8) | colorRGB[3];
                 Arrays.fill(rgb, color);
                 img.setRGB(x1, y1, color);
-
+                
+                point.put("lat", coordinates[0]);
+                point.put("lon", coordinates[1]);
+                point.put("value", result2d[x1][y1]);
+                
                 //Save record to file
-                CSVUtils.writeLine(writer2, Arrays.asList(Integer.toString(x), Integer.toString(y), 
+                CSVUtils.writeLine(writer2, Arrays.asList(Double.toString(coordinates[1]), Double.toString(coordinates[0]), 
                          String.valueOf(result2d[x1][y1])));
                 
                 if(dim == DIMENSION.TWO){
                     //Save to variable
-                    result.put(x+","+y,result2d[x1][y1]);
+                    result.add(point);
                 }
+                i++;
     
             }
         }
@@ -831,5 +635,27 @@ public class Data {
         rgb[2] = (int) Math.round(color1[1] * w1 + color2[1] * w2);
         rgb[3] = (int) Math.round(color1[2] * w1 + color2[2] * w2);
         return rgb;
+    }
+    /**
+     * Returns coordinates in degrees moved by x and y
+     * @param lon degrees
+     * @param lat degrees
+     * @param xInMeters
+     * @param yInMeters
+     * @return [lat, lon]
+     */
+    public double[] metersToDegrees(double lon, double lat, double xInMeters, double yInMeters){
+        double degrees[] = new double[2];
+            degrees[0] = lat + (0.0000449 * yInMeters / Math.cos(lat));
+            degrees[1] = lon + (0.0000449 * xInMeters) ;
+            
+            if(degrees[0] > 90.0){
+                degrees[0] = degrees[0] % 90.0;
+            }
+            if(degrees[1] > 180.0){
+                degrees[1] = degrees[1] % 180.0;
+            }
+            
+        return degrees;
     }
 }

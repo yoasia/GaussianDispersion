@@ -2,7 +2,7 @@ import React from 'react';
 import EventEmitter from 'event-emitter';
 import axios from 'axios';
 
-import Map from './Map'
+import Map from './Map';
 
 class Data extends React.Component {
 
@@ -20,7 +20,7 @@ class Data extends React.Component {
 
     getData(){
         var self = this;
-        axios.get('/WEB-INF/gauss', {
+        axios.get('/Server/gauss', {
             params: {
                 wind_speed: this.props.parameters.windSpeed,
                 wind_angle: this.props.parameters.windDirection,
@@ -29,13 +29,17 @@ class Data extends React.Component {
                 reffl: this.props.parameters.refflectionCo,
                 stb_class: this.props.parameters.weatherStabilityClass,
                 grid: this.props.parameters.grid,
-                dimension: this.props.parameters.areaDimension
+                dimension: this.props.parameters.areaDimension,
+                lon: this.props.parameters.lon,
+                lat: this.props.parameters.lat
             }
         }).then(function (response) {
             console.log(response);
             self.setState({downloaded:true, data:response.data})
+            self.emitter.emit("dataDownloaded", true);
         }).catch(function (error) {
             console.log(error);
+            self.emitter.emit("dataDownloaded", false);
         });
     }
 
@@ -48,7 +52,6 @@ class Data extends React.Component {
             }
         }
     }
-    
 
     render() {
         return (

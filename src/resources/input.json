@@ -1,15 +1,17 @@
 {
-	"wind_speed_horizontal":5,
+    "wind_speed_horizontal":5,
     "wind_direction":30,
     "release_height":5,
     "source_strength":0.001,
     "refflection_co":1,
     "stability_class_num":1,
-	"z0":0.029,
-	"a":0.28,
+    "z0":0.029,
+    "a":0.28,
     "b":0.9,
     "p":-0.27819,
     "q":0.865,
     "area_dimension":1000,
-    "grid":5.0
+    "grid":5.0,
+    "lon":20.0,
+    "lat":52.0
 }

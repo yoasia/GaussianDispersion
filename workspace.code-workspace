@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "web"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true,
+		"emeraldwalk.runonsave": {
+			"commands": [
+				{
+					"match": "\\.js$",
+					"cmd": "cd ${workspaceRoot} && webpack"
+				}
+			]
+		},
+	},
+	
+	
+}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Map as MapLeaflet, Marker, Popup, TileLayer } from 'react-leaflet';
-import HeatmapLayer from 'react-leaflet-heatmap-layer';
 import EventEmitter from 'event-emitter';
+import Visualizer from './Visualizer';
 
 class Map extends React.Component {
 
@@ -19,6 +19,7 @@ class Map extends React.Component {
             },
             zoom: 7,
             draggable: true,
+            data:this.props.data
           }   
 
           this.emitter = this.props.emitter;
@@ -63,6 +64,12 @@ class Map extends React.Component {
         this.emitter.emit("lonLatChanged", lon, lat);
     }
 
+    componentDidUpdate(prevProps, prevState) {
+        if(prevProps.data != this.props.data){
+            this.setState({data: this.props.data});
+        }
+    }
+
     render() {
 
         const position = [this.state.center.lat, this.state.center.lon]
@@ -83,6 +90,7 @@ class Map extends React.Component {
                     {this.state.draggable ? 'DRAG MARKER' : 'MARKER FIXED'}
                     </span>
                 </Popup>
+                {(this.state.data != null) ? <Visualizer data={this.state.data}/> : null}
                 </Marker>
             </MapLeaflet>
         );

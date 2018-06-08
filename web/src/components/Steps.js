@@ -10,6 +10,7 @@ import TextField from '@material-ui/core/TextField';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import MenuItem from '@material-ui/core/MenuItem';
 import EventEmitter from 'event-emitter';
+import LinearProgress from '@material-ui/core/LinearProgress';
 
 
 var emitter;
@@ -62,6 +63,9 @@ const styles = theme => ({
     marginLeft: theme.spacing.unit,
     marginRight: theme.spacing.unit,
     width: 200,
+  },
+  loader:{
+    flexGrow:1,
   }
 });
 
@@ -88,6 +92,7 @@ class Steps extends React.Component {
         this.state = {
             activeStep: 0,
             skipped: new Set(),
+            downloaded:false,
             parameters:{
                 lon:20, 
                 lat:52,
@@ -110,6 +115,7 @@ class Steps extends React.Component {
         this.setLonLat = this.setLonLat.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.onFinish = this.onFinish.bind(this);
+        this.afterDownloaad = this.afterDownloaad.bind(this);
 
     }
 
@@ -124,6 +130,11 @@ class Steps extends React.Component {
 
     onFinish(){
       this.props.onFinish(this.state.parameters);
+      emitter.on('dataDownloaded', this.afterDownloaad);
+    }
+
+    afterDownloaad(status){
+      this.setState({downloaded: true});
     }
     
     /**
@@ -339,12 +350,14 @@ class Steps extends React.Component {
       activeStep: this.state.activeStep + 1,
       skipped,
     });
-  };
+    emitEventDraggableMarker(this.state.activeStep + 1);
+  };    
 
   handleReset = () => {
     this.setState({
       activeStep: 0,
     });
+    emitEventDraggableMarker(0);
   };
 
   render() {
@@ -375,9 +388,16 @@ class Steps extends React.Component {
         <div>
           {activeStep === steps.length ? (
             <div>
-              <Typography className={classes.instructions}>
-                All steps completed - you&quot;re finished
-              </Typography>
+              <div className={styles.loader}>
+              {
+                (this.state.downloaded == true) ? 
+                <Typography className={classes.instructions}>
+                    All steps completed 
+                </Typography>
+                :
+                <LinearProgress color="secondary" />
+                }
+              </div>
               <Button onClick={this.handleReset} className={classes.button}>
                 Reset
               </Button>

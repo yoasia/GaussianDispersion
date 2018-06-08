@@ -7,8 +7,6 @@
 import data.DIMENSION;
 import data.Data;
 import data.JCudaGauss;
-import static data.Main.RESOURCE_PATH;
-import static data.Main.readInput;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -23,6 +21,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import static java.lang.Math.toIntExact;
+import org.json.simple.JSONArray;
 
 /**
  *
@@ -53,7 +52,7 @@ public class gaussDemo2d extends HttpServlet {
             /* TODO output your page here. You may use following sample code. */
 
             //create Json Object
-            JSONObject json = dataObject.getResult();
+            JSONArray json = dataObject.getResult();
             out.flush();
             // finally output the json string       
             out.print(json);

@@ -15,7 +15,8 @@ class App extends React.Component {
         super(props);
         
         this.state = { 
-            parameters:null
+            parameters:null,
+            callbackGetData:null
         };
 
         this.emitter = new EventEmitter();
@@ -29,7 +30,7 @@ class App extends React.Component {
     render() {
         return (
             <div id='app'>
-                 <Data emitter={this.emitter} parameters={this.state.parameters}></Data>
+                 <Data emitter={this.emitter} parameters={this.state.parameters} ></Data>
                  <Steps onFinish={this.setUserParameters} emitter={this.emitter} className={'panel'}></Steps>
             </div>      
         );

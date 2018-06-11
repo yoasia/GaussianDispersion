@@ -22,10 +22,10 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
     int ix = floor((double)(index%(n*n)%n));
 
 
-    //calculate point coordinates
+    //calculate point coordinates in m
     x = (ix - (0.5*n))*grid;
     y = (iy - (0.5*n))*grid;
-    z = (iz - (0.5*n))*grid;
+    z = iz * grid;
 
     int resultIndex = (iz * n * n) + (iy * n) + ix;
 

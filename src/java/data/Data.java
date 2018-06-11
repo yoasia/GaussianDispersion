@@ -57,7 +57,7 @@ public class Data {
     public static final String MY_PATH = "/media/joanna/Linux/Studia/Magisterka/Server/";
     public static final String RESOURCE_PATH = MY_PATH+"src/resources/";
     public static final String RESULT_PATH = MY_PATH+"results/";
-    private static final double DEFAULT_AREA_DIMENSION = 500;
+    private static final double DEFAULT_AREA_DIMENSION = 1000;
     private static final double DEFAULT_GRID = 2;
     
     private double wind_speed_horizontal;
@@ -456,7 +456,7 @@ public class Data {
         CUfunction function = new CUfunction();
         cuModuleGetFunction(function, module, "gauss");
 
-        int numElements = N*N*N;
+        int numElements = N*N/2;
 
         // Allocate the device input data, and copy the
         // host input data to the device
@@ -540,7 +540,7 @@ public class Data {
             
             int x = (int)((ix - (0.5*N))*grid);
             int y = (int)((iy - (0.5*N))*grid);
-            int z = (int)((iz - (0.5*N))*grid);
+            int z = (int)(iz *grid);
             
             double coordinates[] = metersToDegrees(lon, lat, x, y);
             
@@ -554,11 +554,11 @@ public class Data {
                     point.put("z", z);
                     point.put("value", hostOutput[i]);
                     result.add(point);
-                    
+                }    
                     //Save record to file
-                    CSVUtils.writeLine(writer, Arrays.asList(Double.toString(coordinates[1]), Double.toString(coordinates[0]), 
-                        Integer.toString(z), String.valueOf(hostOutput[i])));
-                }
+                CSVUtils.writeLine(writer, Arrays.asList(Double.toString(x), Double.toString(y), 
+                                    Integer.toString(z), String.valueOf(hostOutput[i])));
+               
                 result3d[ix][iy][iz] = hostOutput[i];
                 result2d[ix][iy] = result2d[ix][iy] + hostOutput[i];
                 

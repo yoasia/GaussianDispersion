@@ -103,7 +103,7 @@ class Steps extends React.Component {
                 refflectionCo:1,
                 weatherStabilityClass:1,
                 areaDimension:null,
-                grid:10
+                grid:50
             }
           };
          

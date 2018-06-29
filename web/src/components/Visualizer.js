@@ -10,6 +10,7 @@ class Visualizer extends Component {
         }
     }
 
+
     componentWillMount() {
 
     }

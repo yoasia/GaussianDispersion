@@ -57,8 +57,9 @@ public class Data {
     public static final String MY_PATH = "/media/joanna/Linux/Studia/Magisterka/Server/";
     public static final String RESOURCE_PATH = MY_PATH+"src/resources/";
     public static final String RESULT_PATH = MY_PATH+"results/";
-    private static final double DEFAULT_AREA_DIMENSION = 1000;
-    private static final double DEFAULT_GRID = 2;
+    private static final double DEFAULT_AREA_DIMENSION = 5000;
+    private static final double DEFAULT_GRID = 50;
+    private static final int R = 6378137;
     
     private double wind_speed_horizontal;
     private double wind_direction;
@@ -456,7 +457,7 @@ public class Data {
         CUfunction function = new CUfunction();
         cuModuleGetFunction(function, module, "gauss");
 
-        int numElements = N*N/2;
+        int numElements = N*N*N/2;
 
         // Allocate the device input data, and copy the
         // host input data to the device
@@ -542,7 +543,7 @@ public class Data {
             int y = (int)((iy - (0.5*N))*grid);
             int z = (int)(iz *grid);
             
-            double coordinates[] = metersToDegrees(lon, lat, x, y);
+            double coordinates[] = calculateNewCoords(lon, lat, x, y);
             
                 //System.out.println(i+", "+j+", "+k+", "+hostOutput[index]); 
             if(hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i] ){
@@ -577,7 +578,7 @@ public class Data {
                 int x = (int)((x1 - (0.5*N))*grid);
                 int y = (int)((y1 - (0.5*N))*grid);
                 
-                double[] coordinates = metersToDegrees(lon, lat, (double) x, (double) y);
+                double[] coordinates = calculateNewCoords(lon, lat, (double) x, (double) y);
                 
                 double value = result2d[x1][y1] / max;
                 int [] color1 = {171, 255, 196};
@@ -593,7 +594,7 @@ public class Data {
                 point.put("value", result2d[x1][y1]);
                 
                 //Save record to file
-                CSVUtils.writeLine(writer2, Arrays.asList(Double.toString(coordinates[1]), Double.toString(coordinates[0]), 
+                CSVUtils.writeLine(writer2, Arrays.asList(Double.toString(x), Double.toString(y), 
                          String.valueOf(result2d[x1][y1])));
                 
                 if(dim == DIMENSION.TWO){
@@ -638,23 +639,32 @@ public class Data {
     }
     /**
      * Returns coordinates in degrees moved by x and y
-     * @param lon degrees
-     * @param lat degrees
-     * @param xInMeters
-     * @param yInMeters
+     * @param lon_start degrees
+     * @param lat_start degrees
+     * @param x_distance x distance in meters
+     * @param y_distance x distance in meters
      * @return [lat, lon]
      */
-    public double[] metersToDegrees(double lon, double lat, double xInMeters, double yInMeters){
+    public double[] calculateNewCoords(double lon_start, double lat_start, double x_distance, double y_distance){
         double degrees[] = new double[2];
-            degrees[0] = lat + (0.0000449 * yInMeters / Math.cos(lat));
-            degrees[1] = lon + (0.0000449 * xInMeters) ;
+        //Earth’s radius, sphere
+        
+//            degrees[0] = lat + (0.0000449 * yInMeters / Math.cos(lat));
+        //latitude            
+        degrees[0] = lat_start + y_distance/R * 180/Math.PI;
+//            degrees[1] = lon + (0.0000449 * xInMeters) ;
+        //longitude
+        degrees[1] = lon_start + x_distance/(R*Math.cos(Math.PI*lat_start/180)) * 180/Math.PI;
             
-            if(degrees[0] > 90.0){
-                degrees[0] = degrees[0] % 90.0;
-            }
-            if(degrees[1] > 180.0){
-                degrees[1] = degrees[1] % 180.0;
-            }
+        if(degrees[0] > 90.0){
+            degrees[0] = degrees[0] % 90.0;
+        }
+        if(degrees[1] > 180.0){
+            degrees[1] = degrees[1] % 180.0;
+        }
+        
+        
+     
             
         return degrees;
     }

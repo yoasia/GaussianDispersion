@@ -21,7 +21,7 @@ class Map extends React.Component {
             draggable: true,
             data:this.props.data
           }   
-
+          this.map = null;
           this.emitter = this.props.emitter;
 
           this.setMarkerLonLat = this.setMarkerLonLat.bind(this);
@@ -40,6 +40,10 @@ class Map extends React.Component {
         marker.lat = lat;
 
         this.setState({marker});
+    }
+
+    componentDidMount() {
+        this.map;    
     }
 
     /**
@@ -76,7 +80,7 @@ class Map extends React.Component {
         const markerPosition = [this.state.marker.lat, this.state.marker.lon]
 
         return (
-            <MapLeaflet center={position} zoom={this.state.zoom}>     
+            <MapLeaflet ref={(map)=>this.map = map} center={position} zoom={this.state.zoom}>     
                 <TileLayer url='http://{s}.tile.osm.org/{z}/{x}/{y}.png'
                     attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                     />

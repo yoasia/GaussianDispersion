@@ -1,4 +1,10 @@
 {
     
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "emeraldwalk.runonsave": [
+        {
+            "match": "\\.js$",
+            "cmd": "cd ${workspaceRoot} && node_modules/webpack/bin/webpack.js --progress"
+        }
+    ]
 }

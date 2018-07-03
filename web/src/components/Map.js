@@ -1,5 +1,6 @@
 import React from 'react';
-import { Map as MapLeaflet, Marker, Popup, TileLayer } from 'react-leaflet';
+import { Cesium } from "cesium";
+import { Viewer, Entity } from "cesium-react";
 import EventEmitter from 'event-emitter';
 import Visualizer from './Visualizer';
 
@@ -80,24 +81,14 @@ class Map extends React.Component {
         const markerPosition = [this.state.marker.lat, this.state.marker.lon]
 
         return (
-            <MapLeaflet ref={(map)=>this.map = map} center={position} zoom={this.state.zoom}>     
-                <TileLayer url='http://{s}.tile.osm.org/{z}/{x}/{y}.png'
-                    attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                    />
-                <Marker
-                draggable={this.state.draggable}
-                onDragend={this.updatePosition}
-                position={markerPosition}
-                ref={this.refmarker}>
-                <Popup minWidth={90}>
-                    <span onClick={this.toggleDraggable}>
-                    {this.state.draggable ? 'DRAG MARKER' : 'MARKER FIXED'}
-                    </span>
-                </Popup>
-                {(this.state.data != null) ? <Visualizer data={this.state.data}/> : null}
-                </Marker>
-            </MapLeaflet>
-        );
+            <Viewer full>
+              <Entity
+                name="tokyo"
+                point={{ pixelSize: 10 }}>
+                
+              </Entity>
+            </Viewer>
+          );
     }
 }
 

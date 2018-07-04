@@ -1,6 +1,6 @@
 import React from 'react';
-import { Cesium } from "cesium";
-import { Viewer, Entity } from "cesium-react";
+import {  Cartesian3, Color } from "cesium/Cesium";
+import { Viewer, Entity, PointPrimitive } from "cesium-react";
 import EventEmitter from 'event-emitter';
 import Visualizer from './Visualizer';
 
@@ -21,8 +21,7 @@ class Map extends React.Component {
             zoom: 7,
             draggable: true,
             data:this.props.data
-          }   
-          this.map = null;
+          }
           this.emitter = this.props.emitter;
 
           this.setMarkerLonLat = this.setMarkerLonLat.bind(this);
@@ -30,6 +29,7 @@ class Map extends React.Component {
      
     }
     refmarker = React.createRef()
+
     componentWillMount() {
         this.emitter.on('lonLatChanged', this.setMarkerLonLat);
         this.emitter.on('draggableMarker', this.setDraggable);
@@ -44,7 +44,7 @@ class Map extends React.Component {
     }
 
     componentDidMount() {
-        this.map;    
+
     }
 
     /**
@@ -77,16 +77,14 @@ class Map extends React.Component {
 
     render() {
 
-        const position = [this.state.center.lat, this.state.center.lon]
-        const markerPosition = [this.state.marker.lat, this.state.marker.lon]
-
+        const markerPosition =  Cartesian3.fromDegrees(this.state.marker.lon, this.state.marker.lat);
         return (
             <Viewer full>
-              <Entity
-                name="tokyo"
-                point={{ pixelSize: 10 }}>
-                
-              </Entity>
+                 <Entity
+                    name="source"
+                    position={markerPosition}
+                    point={{ pixelSize: 10 }}>
+                    </Entity>
             </Viewer>
           );
     }

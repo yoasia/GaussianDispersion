@@ -11,8 +11,6 @@ const cesiumWorkers = '../Build/Cesium/Workers';
 
 module.exports = {
     context: __dirname,
-
-    //mode: 'production',
     devtool: 'source-map',
     entry: ['./src/App.js'],
     output: {

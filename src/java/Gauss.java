@@ -55,6 +55,8 @@ public class Gauss extends HttpServlet {
         String s_dimension = request.getParameter("dimension");
         String s_lon = request.getParameter("lon");
         String s_lat = request.getParameter("lat");
+        String s_2d = request.getParameter("2d");
+        String s_3d = request.getParameter("3d");
 
         //Check if user set every parametr
         if(s_wind_speed_horizontal == null
@@ -78,8 +80,10 @@ public class Gauss extends HttpServlet {
                 json.put("stability_class_num",s_stability_class_num);
                 json.put("grid",s_grid);
                 json.put("dimension",s_dimension);
-                json.put("s_lon",s_dimension);
-                json.put("s_lat",s_dimension);
+                json.put("s_lon",s_lon);
+                json.put("s_lat",s_lat);
+                json.put("s_2d",s_2d);
+                json.put("s_3d",s_3d);
                  
                  // finally output the json string       
                 out.print(json);
@@ -103,6 +107,8 @@ public class Gauss extends HttpServlet {
         double b = Double.parseDouble((s_b == null) ? "0": s_b);
         double p = Double.parseDouble((s_p == null) ? "0": s_p);
         double q = Double.parseDouble((s_q == null) ? "0": s_q);
+        boolean _2d = Boolean.parseBoolean((s_2d == null) ? "0": s_2d);
+        boolean _3d = Boolean.parseBoolean((s_3d == null) ? "0": s_3d);
         
         double dimension = Double.parseDouble((s_dimension == null) ? "2000": s_dimension);
         double grid = Double.parseDouble((s_grid == null) ? "10": s_grid);;
@@ -125,12 +131,14 @@ public class Gauss extends HttpServlet {
             dimension,
             grid);
         
-        
-        data.calculate(DIMENSION.TWO);
+        if(_2d == true)
+            data.calculate(DIMENSION.TWO);
+        else if(_3d == true)
+            data.calculate(DIMENSION.THREE);
         
         
         try (PrintWriter out = response.getWriter()) {
-            JSONArray json = data.getResult();
+            JSONObject json = data.getResult();
              
              // finally output the json string       
             out.print(json);

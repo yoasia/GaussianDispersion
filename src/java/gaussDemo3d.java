@@ -48,7 +48,7 @@ public class gaussDemo3d extends HttpServlet {
             /* TODO output your page here. You may use following sample code. */
 
             //create Json Object
-            JSONArray json = dataObject.getResult();
+            JSONObject json = dataObject.getResult();
             String str = json.toString();
             out.flush();
             // finally output the json string       

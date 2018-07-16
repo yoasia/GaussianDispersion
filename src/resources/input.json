@@ -10,8 +10,8 @@
     "b":0.9,
     "p":-0.27819,
     "q":0.865,
-    "area_dimension":1000,
-    "grid":5.0,
+    "area_dimension":2000,
+    "grid":50.0,
     "lon":20.0,
     "lat":52.0
 }

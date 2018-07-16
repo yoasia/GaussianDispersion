@@ -1,8 +1,10 @@
 import React from 'react';
-import {  Cartesian3, Color } from "cesium/Cesium";
-import { Viewer, Entity, PointPrimitive } from "cesium-react";
-import EventEmitter from 'event-emitter';
+import {  Cartesian3, BoundingSphere, Cartesian2 } from "cesium/Cesium";
+import Cesium from 'cesium';
+ 
+import { Viewer, Entity, Camera, CameraFlyToBoundingSphere } from "cesium-react";
 import Visualizer from './Visualizer';
+import { figureEnum } from '../constants/visualization';
 
 class Map extends React.Component {
 
@@ -20,31 +22,34 @@ class Map extends React.Component {
             },
             zoom: 7,
             draggable: true,
-            data:this.props.data
+            data:this.props.data,
+            pointShape:figureEnum.CUBE
           }
+          this.animateCamera = true;
           this.emitter = this.props.emitter;
 
           this.setMarkerLonLat = this.setMarkerLonLat.bind(this);
           this.setDraggable = this.setDraggable.bind(this);
-     
+          this.changePointShape = this.changePointShape.bind(this);
     }
     refmarker = React.createRef()
 
     componentWillMount() {
         this.emitter.on('lonLatChanged', this.setMarkerLonLat);
         this.emitter.on('draggableMarker', this.setDraggable);
+        this.emitter.on('pointShapeChanged', this.changePointShape);
     }
     
     setMarkerLonLat(lon, lat){
-        var marker = this.state.marker;
+        var marker = Object.assign({}, this.state.marker);
         marker.lon = lon;
         marker.lat = lat;
 
         this.setState({marker});
+        this.animateCamera = true;
     }
 
     componentDidMount() {
-
     }
 
     /**
@@ -53,6 +58,10 @@ class Map extends React.Component {
      */
     setDraggable (draggable) {
         this.setState({draggable})
+    }
+
+    changePointShape (shape) {
+        this.setState({pointShape:shape});
     }
 
     toggleDraggable = () => {
@@ -65,26 +74,74 @@ class Map extends React.Component {
         this.setState({
             marker: { lat, lon },
         })
-
+        this.animateCamera = true;
         this.emitter.emit("lonLatChanged", lon, lat);
+
     }
+
+    componentWillUpdate(nextProps, nextState) {
+        if(nextState.marker != this.state.marker)
+            this.animateCamera = true;
+        else
+            this.animateCamera = false;
+
+    }
+    
 
     componentDidUpdate(prevProps, prevState) {
         if(prevProps.data != this.props.data){
             this.setState({data: this.props.data});
+            
         }
+        
     }
 
     render() {
-
         const markerPosition =  Cartesian3.fromDegrees(this.state.marker.lon, this.state.marker.lat);
+        const boundingSphere = new BoundingSphere( markerPosition, 2000);
+        const sourcePoint = new Cesium.Cartesian3(20, 20, 20);
+        const color = new Cesium.Color(0.5, 0.25, 0.5, 1);
+        var cameraAnimation = null;
+        
+        if(this.animateCamera)
+            cameraAnimation = (
+                <div>
+                    <Camera
+                        view={{
+                            destination: markerPosition,
+                        }}
+                        />
+                    <CameraFlyToBoundingSphere
+                        boundingSphere={boundingSphere}
+                        duration={1}
+                    />
+                </div>
+            )
+
         return (
-            <Viewer full>
-                 <Entity
-                    name="source"
-                    position={markerPosition}
-                    point={{ pixelSize: 10 }}>
-                    </Entity>
+            <Viewer full  ref={e => {
+                this.viewer = e ? e.cesiumElement : null;
+              }}>
+                <Visualizer data={this.state.data} pointShape={this.state.pointShape} />
+                
+                //Source point
+                <Entity
+                name = {'Source point'}
+                label={{
+                    id: 'source',
+                    text: 'source',
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    pixelOffset:new Cesium.Cartesian2(0, -20)
+                }}
+                position={markerPosition}
+                ellipsoid = {{
+                    radii : sourcePoint,
+                    material: color,
+                   }}
+                >
+                </Entity>
+                {/* camera animation */}
+                {cameraAnimation}
             </Viewer>
           );
     }

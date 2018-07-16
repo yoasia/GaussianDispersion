@@ -52,7 +52,7 @@ public class gaussDemo2d extends HttpServlet {
             /* TODO output your page here. You may use following sample code. */
 
             //create Json Object
-            JSONArray json = dataObject.getResult();
+            JSONObject json = dataObject.getResult();
             out.flush();
             // finally output the json string       
             out.print(json);

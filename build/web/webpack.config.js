@@ -30,12 +30,12 @@ module.exports = {
             cesium: path.resolve(__dirname, cesiumSource)
         }
     },
-    externals: {
+    externals:{
         cesium: "Cesium"
-      },
+    },
     plugins: [
         new HtmlWebpackPlugin({
-            template: 'src/index.html'
+            template: 'src/template.html'
         }),
         // Copy Cesium Assets, Widgets, and Workers to a static directory
         new CopyWebpackPlugin([{from: path.join(cesiumSource, cesiumWorkers), to: 'Workers'}]),
@@ -53,28 +53,16 @@ module.exports = {
                 return module.context && module.context.indexOf('cesium') !== -1;
             }
         }),
-        new CopyWebpackPlugin([
-            {
-              from: `node_modules/cesium/Build/CesiumUnminified`,
-              to: "cesium"
-            }
-        ]),
         new HtmlIncludeAssetsPlugin({
             append: false,
             assets: [
                 "cesium/Widgets/widgets.css",
+                "css/styles.css",
                 "cesium/Cesium.js"
             ]
-        }),
-        new webpack.DefinePlugin({
-            "process.env": {
-                NODE_ENV: JSON.stringify("development"),
-                CESIUM_BASE_URL: JSON.stringify("/cesium")
-            }
-        }) 
+        })
     ],
     module: {
-
         rules: [
             {
                 test: /\.css$/,
@@ -91,7 +79,8 @@ module.exports = {
                 options: {
                     plugins: [
                         [
-                            "babel-plugin-transform-builtin-extend", {
+                            "babel-plugin-transform-builtin-extend", 
+                            'react-hot-loader/babel', {
                                 globals: ["Error", "Array"]
                             }
                         ]

@@ -82,6 +82,7 @@ public class Data {
     private double lat;
     private int N;
     private JSONArray result;
+    private double max_value = Double.NEGATIVE_INFINITY;
     
     public Data(){
         loadDemo();
@@ -215,8 +216,11 @@ public class Data {
 
     }
     
-    public JSONArray getResult() {
-        return result;
+    public JSONObject getResult() {
+        JSONObject returnObject = new JSONObject();
+        returnObject.put("result", result);
+        returnObject.put("max_value", max_value);
+        return returnObject;
     }
 
     public double getWind_speed_horizontal() {
@@ -432,6 +436,8 @@ public class Data {
      * @throws IOException If an IO error occurs
      */
     private void calculateGauss(DIMENSION dim) throws IOException{
+        
+        
     
         // Enable exceptions and omit all subsequent error checks
         JCudaDriver.setExceptionsEnabled(true);
@@ -525,7 +531,6 @@ public class Data {
         
         double [][][] result3d = new double[N][N][N];
         double [][] result2d = new double[N][N];
-        double max = 0.0;
         
         for(int i = 0; i < N; i++){
             Arrays.fill(result2d[i], 0.0);
@@ -564,8 +569,8 @@ public class Data {
                 result2d[ix][iy] = result2d[ix][iy] + hostOutput[i];
                 
                 //Save max value
-                if(result2d[ix][iy] > max )
-                    max = result2d[ix][iy];
+                if(result2d[ix][iy] > max_value )
+                    max_value = result2d[ix][iy];
             }
                 
         }
@@ -580,7 +585,7 @@ public class Data {
                 
                 double[] coordinates = calculateNewCoords(lon, lat, (double) x, (double) y);
                 
-                double value = result2d[x1][y1] / max;
+                double value = result2d[x1][y1] / max_value;
                 int [] color1 = {171, 255, 196};
                 int [] color2 = {255, 34, 34};
                 int colorRGB[] = getColor(color1, color2, value, 255);
@@ -600,7 +605,8 @@ public class Data {
                 if(dim == DIMENSION.TWO){
                     //Save to variable
                     result.add(point);
-                }
+                } 
+                
                 i++;
     
             }

@@ -19,38 +19,36 @@ class Map extends React.Component {
             marker: {
                 lat: 52,
                 lon: 20,
+                height:0
             },
             zoom: 7,
             draggable: true,
-            data:this.props.data,
-            pointShape:figureEnum.CUBE
+            data:this.props.data
           }
           this.animateCamera = true;
           this.emitter = this.props.emitter;
 
           this.setMarkerLonLat = this.setMarkerLonLat.bind(this);
           this.setDraggable = this.setDraggable.bind(this);
-          this.changePointShape = this.changePointShape.bind(this);
     }
     refmarker = React.createRef()
 
     componentWillMount() {
         this.emitter.on('lonLatChanged', this.setMarkerLonLat);
         this.emitter.on('draggableMarker', this.setDraggable);
-        this.emitter.on('pointShapeChanged', this.changePointShape);
+
     }
     
-    setMarkerLonLat(lon, lat){
+    setMarkerLonLat(lon, lat, height){
         var marker = Object.assign({}, this.state.marker);
         marker.lon = lon;
         marker.lat = lat;
+        marker.height = height;
 
         this.setState({marker});
         this.animateCamera = true;
     }
 
-    componentDidMount() {
-    }
 
     /**
      * 
@@ -60,9 +58,7 @@ class Map extends React.Component {
         this.setState({draggable})
     }
 
-    changePointShape (shape) {
-        this.setState({pointShape:shape});
-    }
+    
 
     toggleDraggable = () => {
         this.setState({ draggable: !this.state.draggable })
@@ -90,14 +86,13 @@ class Map extends React.Component {
 
     componentDidUpdate(prevProps, prevState) {
         if(prevProps.data != this.props.data){
-            this.setState({data: this.props.data});
-            
+            this.setState({data: this.props.data}); 
         }
         
     }
 
     render() {
-        const markerPosition =  Cartesian3.fromDegrees(this.state.marker.lon, this.state.marker.lat);
+        const markerPosition =  Cartesian3.fromDegrees(this.state.marker.lon, this.state.marker.lat, this.state.marker.height);
         const boundingSphere = new BoundingSphere( markerPosition, 2000);
         const sourcePoint = new Cesium.Cartesian3(20, 20, 20);
         const color = new Cesium.Color(0.5, 0.25, 0.5, 1);
@@ -122,7 +117,7 @@ class Map extends React.Component {
             <Viewer full  ref={e => {
                 this.viewer = e ? e.cesiumElement : null;
               }}>
-                <Visualizer data={this.state.data} pointShape={this.state.pointShape} />
+                <Visualizer emitter={this.emitter} data={this.state.data} />
                 
                 //Source point
                 <Entity

@@ -4,8 +4,10 @@
  * and open the template in the editor.
  */
 
-import data.DIMENSION;
-import data.Data;
+import static Configuration.DEFAULT_AREA_DIMENSION;
+import static Configuration.DEFAULT_GRID;
+import calculation.DIMENSION;
+import calculation.Data;
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.servlet.ServletException;
@@ -55,8 +57,8 @@ public class Gauss extends HttpServlet {
         String s_dimension = request.getParameter("dimension");
         String s_lon = request.getParameter("lon");
         String s_lat = request.getParameter("lat");
-        String s_2d = request.getParameter("2d");
-        String s_3d = request.getParameter("3d");
+        String s_2d = request.getParameter("_2d");
+        String s_3d = request.getParameter("_3d");
 
         //Check if user set every parametr
         if(s_wind_speed_horizontal == null
@@ -107,11 +109,11 @@ public class Gauss extends HttpServlet {
         double b = Double.parseDouble((s_b == null) ? "0": s_b);
         double p = Double.parseDouble((s_p == null) ? "0": s_p);
         double q = Double.parseDouble((s_q == null) ? "0": s_q);
-        boolean _2d = Boolean.parseBoolean((s_2d == null) ? "0": s_2d);
-        boolean _3d = Boolean.parseBoolean((s_3d == null) ? "0": s_3d);
+        boolean _2d = (s_2d == null ? false : true);
+        boolean _3d = (s_3d == null ? false: true);
         
-        double dimension = Double.parseDouble((s_dimension == null) ? "2000": s_dimension);
-        double grid = Double.parseDouble((s_grid == null) ? "10": s_grid);;
+        double dimension = Double.parseDouble((s_dimension == null) ? DEFAULT_AREA_DIMENSION: s_dimension);
+        double grid = Double.parseDouble((s_grid == null) ? DEFAULT_GRID: s_grid);;
         
 
 

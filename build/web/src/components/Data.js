@@ -16,12 +16,21 @@ class Data extends React.Component {
         };  
         this.emitter = this.props.emitter;
         this.getData = this.getData.bind(this);
+        this.deleteData = this.deleteData.bind(this);
+    }
+
+    componentWillMount() {
+        this.emitter.on('reset', this.deleteData);
+    }
+
+    deleteData(){
+        this.setState({data:null, downloaded:false})
     }
 
     getData(){
         var self = this;
-        // axios.get('/Server/gauss', {
-        axios.get('/mockup/3d.json', {
+        axios.get('/Server/gauss', {
+        // axios.get('/mockup/3d.json', {
             params: {
                 wind_speed: this.props.parameters.windSpeed,
                 wind_angle: this.props.parameters.windDirection,
@@ -32,12 +41,13 @@ class Data extends React.Component {
                 grid: this.props.parameters.grid,
                 dimension: this.props.parameters.areaDimension,
                 lon: this.props.parameters.lon,
-                lat: this.props.parameters.lat
+                lat: this.props.parameters.lat,
+                _3d: true
             }
         }).then(function (response) {
             console.log(response);
             self.setState({downloaded:true, data:response.data})
-            self.emitter.emit("dataDownloaded", true);
+            self.emitter.emit("dataDownloaded", response.data.max_value);
         }).catch(function (error) {
             console.log(error);
             self.emitter.emit("dataDownloaded", false);

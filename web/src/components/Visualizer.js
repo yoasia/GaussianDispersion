@@ -17,14 +17,18 @@ class Visualizer extends Component {
         super(props);
         this.state={
             data:this.props.data,
-            pointShape:this.props.pointShape,
+            pointShape:figureEnum.CUBE,
+            transparency:1,
+            minValue:0
         }
+        this.emitter = this.props.emitter;
+
+        this.changePointShape = this.changePointShape.bind(this);
+        this.changeTransparency = this.changeTransparency.bind(this);
+        this.changeMinValue = this.changeMinValue.bind(this);
+
     }
 
-    componentDidUpdate(prevProps, prevState) {
-        if(this.props != prevProps)
-            this.setState({data: this.props.data})
-    }
 
     componentDidUpdate(prevProps, prevState) {
         if (this.props.pointShape !== prevProps.pointShape) {
@@ -51,8 +55,20 @@ class Visualizer extends Component {
         return {r, g, b};
     }
 
-    componentWillUpdate() {
-        
+    componentWillMount() {
+        this.emitter.on('pointShapeChanged', this.changePointShape);
+        this.emitter.on('transparencyChanged', this.changeTransparency);
+        this.emitter.on('minValueChanged', this.changeMinValue);   
+    }
+
+    changePointShape (pointShape) {
+        this.setState({pointShape});
+    }
+    changeTransparency (transparency) {
+        this.setState({transparency});
+    }
+    changeMinValue (minValue) {
+        this.setState({minValue});
     }
 
     render() {
@@ -72,9 +88,9 @@ class Visualizer extends Component {
                         cubePosition =  Cartesian3.fromDegrees(element.lon, element.lat, element.z);
                         const rgbColor = self.valueToColor(element.value, self.state.data.max_value);
                         const a = self.logScale(element.value, self.state.data.max_value);
-                        if(a < 0.08)
+                        if(element.value < this.state.minValue)
                             return null;
-                        color = new Cesium.Color(rgbColor.r/255, rgbColor.g/255, rgbColor.b/255, a) ;
+                        color = new Cesium.Color(rgbColor.r/255, rgbColor.g/255, rgbColor.b/255, this.state.transparency) ;
 
                         if(self.state.pointShape == figureEnum.CUBE)
                             return (<Entity

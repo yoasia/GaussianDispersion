@@ -220,9 +220,9 @@ class Steps extends React.Component {
             var parameters = this.state.parameters;
             parameters[name] = event.target.value;
 
-            if(name == "lon" || name == "lat"){
+            if(name == "lon" || name == "lat" || name == "height"){
                 parameters[name] = parseFloat(event.target.value);
-                emitter.emit("lonLatChanged", parameters.lon, parameters.lat);
+                emitter.emit("lonLatChanged", parameters.lon, parameters.lat, parameters.height);
             } else{
                 this.setState({parameters});
             }
@@ -231,16 +231,22 @@ class Steps extends React.Component {
       };
 
     handleChangeDisplay = (name, value) => event => {
-        value = value || event.value;
+        value = value || event;
         this.displayFormValues[name] = value;
         var parameters = this.state.displayParameters;
         parameters[name] = value;
-
+        
         this.setState({displayParameters:parameters}); 
-
+        
         if(name == "point_shape"){
           emitter.emit("pointShapeChanged", value);
 
+        }
+        else if(name == "transparency"){
+          emitter.emit("transparencyChanged", value);
+        }
+        else if(name == "min_value"){
+          emitter.emit("minValueChanged", value);
         }
       };    
 
@@ -436,6 +442,7 @@ class Steps extends React.Component {
 
   handleSlider = (props) => {
     const { value, dragging, index, ...restProps } = props;
+    console.log("Slider moved.");
     return (
       <Tooltip
         prefixCls="rc-slider-tooltip"
@@ -483,7 +490,7 @@ class Steps extends React.Component {
                   (this.state.downloaded == true) ? 
                   (
                   <div style={{marginTop:"2em", marginBottom:"1em"}}>
-                      <Typography align='center' variant="title" color="inherit">
+                      <Typography align='center' variant="display1" color="inherit">
                         Display options
                       </Typography>
                       <div style={buttonFigureStyle}>
@@ -511,12 +518,11 @@ class Steps extends React.Component {
                       <div style={wrapperStyle}>
                         <Typography id="label">Min value</Typography>
                         <Slider 
-                        min={0} 
-                        max={this.state.max_value} 
-                        step={this.state.max_value/100}
+                        min={0.000001} 
+                        max={this.state.max_value/100} 
+                        step={this.state.max_value/10000}
                         defaultValue={0} 
                         onAfterChange={this.handleChangeDisplay('min_value')}
-                        handle={this.handleSlider}
                         trackStyle={{backgroundColor:"#3f51b5"}}
                         handleStyle={{border:"solid 2px #3f51b5"}}
                         />
@@ -541,7 +547,7 @@ class Steps extends React.Component {
               </div>
               <div className={classes.buttonContainer}>
                 <Button onClick={this.handleReset} className={classes.button}>
-                  Reset
+                  BACK
                 </Button>
               </div>
               </div>

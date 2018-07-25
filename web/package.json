@@ -4,7 +4,7 @@
   "description": "Visualisation of gas dispersion",
   "main": "dst/bundle.js",
   "scripts": {
-    "build": "./webpack.config.js",
+    "build": "node_modules/webpack/bin/webpack.js",
     "start": "webpack-dev-server --hot"
   },
   "repository": {

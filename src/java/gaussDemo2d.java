@@ -4,9 +4,9 @@
  * and open the template in the editor.
  */
 
-import data.DIMENSION;
-import data.Data;
-import data.JCudaGauss;
+import calculation.DIMENSION;
+import calculation.Data;
+import calculation.JCudaGauss;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;

@@ -29,8 +29,8 @@ class Data extends React.Component {
 
     getData(){
         var self = this;
-        // axios.get('/Server/gauss', {
-        axios.get('/mockup/3d.json', {
+        axios.get('/Server/gauss', {
+        // axios.get('/mockup/3d.json', {
             params: {
                 wind_speed: this.props.parameters.windSpeed,
                 wind_angle: this.props.parameters.windDirection,
@@ -41,7 +41,8 @@ class Data extends React.Component {
                 grid: this.props.parameters.grid,
                 dimension: this.props.parameters.areaDimension,
                 lon: this.props.parameters.lon,
-                lat: this.props.parameters.lat
+                lat: this.props.parameters.lat,
+                _3d: true
             }
         }).then(function (response) {
             console.log(response);

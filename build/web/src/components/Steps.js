@@ -9,16 +9,22 @@ import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import MenuItem from '@material-ui/core/MenuItem';
-import EventEmitter from 'event-emitter';
 import LinearProgress from '@material-ui/core/LinearProgress';
-import Slider from '@material-ui/lab/Slider';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Slider, { Range } from 'rc-slider';
+import Tooltip from 'rc-tooltip';
+import SquareIcon from '@material-ui/icons/CropSquare';
+import PanoramaFishEye from '@material-ui/icons/PanoramaFishEye';
+import Radio from '@material-ui/core/Radio';
+import RadioGroup from '@material-ui/core/RadioGroup';
+import FormControl from '@material-ui/core/FormControl';
+import {figureEnum, DEFAULT_ALPHA} from '../constants/visualization';
 
+import 'rc-slider/assets/index.css';
+import 'rc-tooltip/assets/bootstrap.css';
 
+const Handle = Slider.Handle;
 var emitter;
-const figureEnum = Object.freeze({"BOX":1, "SPHERE":2});
-const DEFAULT_ALPHA = 1;
 
 const weatherStability=[
     {
@@ -47,6 +53,18 @@ const weatherStability=[
     }
 ]
 
+const wrapperStyle = { 
+  width: 200, 
+  margin: "auto",
+  marginTop: "1em",
+  marginBottom: "1em"
+};
+const buttonFigureStyle = { 
+  margin: '2em auto',
+  display: 'flex',
+  justifyContent: 'center',
+};
+
 const styles = theme => ({
   root: {
     position: 'absolute',
@@ -70,6 +88,10 @@ const styles = theme => ({
   button: {
     marginRight: theme.spacing.unit,
   },
+  buttonFigure:{
+    marginRight: theme.spacing.unit,
+    width: '10em'
+  },
   instructions: {
     marginTop: theme.spacing.unit,
     marginBottom: theme.spacing.unit,
@@ -81,7 +103,16 @@ const styles = theme => ({
   },
   loader:{
     flexGrow:1,
-  }
+  },
+  leftIcon: {
+    marginRight: theme.spacing.unit,
+  },
+  rightIcon: {
+    marginLeft: theme.spacing.unit,
+  },
+  iconSmall: {
+    fontSize: 20,
+  },
 });
 
 function getSteps() {
@@ -125,13 +156,14 @@ class Steps extends React.Component {
             },
             displayParameters:{
               min_value:0,
-              point_shape: figureEnum.BOX,
+              point_shape: figureEnum.CUBE,
               transparency: DEFAULT_ALPHA
-            }
+            },
+            max_value: null,
+            checkedA:true
           };
-         
         this.textFieldValues = Object.assign({}, this.state.parameters);
-        this.displayValues = Object.assign({}, this.state.parameters);
+        this.displayFormValues = Object.assign({}, this.state.displayParameters);
 
         emitter = this.props.emitter;
 
@@ -140,7 +172,6 @@ class Steps extends React.Component {
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeDisplay = this.handleChangeDisplay.bind(this);
         this.onFinish = this.onFinish.bind(this);
-        this.afterDownloaad = this.afterDownloaad.bind(this);
 
     }
 
@@ -153,13 +184,14 @@ class Steps extends React.Component {
         emitter.on('lonLatChanged', this.setLonLat);
     }
 
-    onFinish(){
-      this.props.onFinish(this.state.parameters);
-      emitter.on('dataDownloaded', this.afterDownloaad);
-    }
 
-    afterDownloaad(status){
-      this.setState({downloaded: true});
+
+    onFinish(){
+      var self = this;
+      this.props.onFinish(this.state.parameters);
+      emitter.on('dataDownloaded', (max_value)=>{
+          self.setState({downloaded: true, max_value });
+      });
     }
     
     /**
@@ -188,9 +220,9 @@ class Steps extends React.Component {
             var parameters = this.state.parameters;
             parameters[name] = event.target.value;
 
-            if(name == "lon" || name == "lat"){
+            if(name == "lon" || name == "lat" || name == "height"){
                 parameters[name] = parseFloat(event.target.value);
-                emitter.emit("lonLatChanged", parameters.lon, parameters.lat);
+                emitter.emit("lonLatChanged", parameters.lon, parameters.lat, parameters.height);
             } else{
                 this.setState({parameters});
             }
@@ -198,21 +230,23 @@ class Steps extends React.Component {
         }
       };
 
-    handleChangeDisplay = name => event => {
-        this.textFieldValues[name] = event.target.value;
+    handleChangeDisplay = (name, value) => event => {
+        value = value || event;
+        this.displayFormValues[name] = value;
+        var parameters = this.state.displayParameters;
+        parameters[name] = value;
+        
+        this.setState({displayParameters:parameters}); 
+        
+        if(name == "point_shape"){
+          emitter.emit("pointShapeChanged", value);
 
-        if(!isNaN(this.textFieldValues[name])){
-
-            var parameters = this.state.parameters;
-            parameters[name] = event.target.value;
-
-            if(name == "lon" || name == "lat"){
-                parameters[name] = parseFloat(event.target.value);
-                emitter.emit("lonLatChanged", parameters.lon, parameters.lat);
-            } else{
-                this.setState({parameters});
-            }
-    
+        }
+        else if(name == "transparency"){
+          emitter.emit("transparencyChanged", value);
+        }
+        else if(name == "min_value"){
+          emitter.emit("minValueChanged", value);
         }
       };    
 
@@ -400,9 +434,26 @@ class Steps extends React.Component {
   handleReset = () => {
     this.setState({
       activeStep: 0,
+      max_value: null
     });
     emitEventDraggableMarker(0);
     emitEventReset();
+  };
+
+  handleSlider = (props) => {
+    const { value, dragging, index, ...restProps } = props;
+    console.log("Slider moved.");
+    return (
+      <Tooltip
+        prefixCls="rc-slider-tooltip"
+        overlay={value}
+        visible={dragging}
+        placement="top"
+        key={index}
+      >
+        <Handle value={value} {...restProps} />
+      </Tooltip>
+    );
   };
 
   render() {
@@ -434,31 +485,61 @@ class Steps extends React.Component {
           {activeStep === steps.length ? (
             <div>
               <div className={classes.container}>
-                <div className={styles.loader}>
+                <div className={classes.loader}>
                 {
                   (this.state.downloaded == true) ? 
                   (
-                  <div>
-                    <AppBar position="static" color="default">
-                      <Toolbar>
-                        <Typography variant="title" color="inherit">
-                          Display options
-                        </Typography>
+                  <div style={{marginTop:"2em", marginBottom:"1em"}}>
+                      <Typography align='center' variant="display1" color="inherit">
+                        Display options
+                      </Typography>
+                      <div style={buttonFigureStyle}>
+                          <Button 
+                          variant={(this.state.displayParameters.point_shape == figureEnum.CUBE ? "contained" : "outlined")} 
+                          color={(this.state.displayParameters.point_shape == figureEnum.CUBE ? "primary" : "default")} 
+                          className={classes.buttonFigure}
+                          value={figureEnum.CUBE}
+                          onClick={this.handleChangeDisplay('point_shape', figureEnum.CUBE)}
+                          >
+                            Cubes
+                            <SquareIcon className={classes.rightIcon} />
+                          </Button>
+                          <Button  
+                          variant={(this.state.displayParameters.point_shape == figureEnum.SPHERE ? "contained" : "outlined")}
+                          color={(this.state.displayParameters.point_shape == figureEnum.SPHERE ? "primary" : "default")} 
+                          className={classes.buttonFigure}
+                          value={figureEnum.SPHERE}
+                          onClick={this.handleChangeDisplay('point_shape', figureEnum.SPHERE)}
+                          >
+                            Spheres
+                            <PanoramaFishEye className={classes.rightIcon} />
+                          </Button>
+                      </div>
+                      <div style={wrapperStyle}>
                         <Typography id="label">Min value</Typography>
                         <Slider 
-                        value={this.state.displayParameters.min_value} 
-                        aria-labelledby="label" 
-                        onChange={this.handleChangeDisplay('min_value')} 
+                        min={0.000001} 
+                        max={this.state.max_value/100} 
+                        step={this.state.max_value/10000}
+                        defaultValue={0} 
+                        onAfterChange={this.handleChangeDisplay('min_value')}
+                        trackStyle={{backgroundColor:"#3f51b5"}}
+                        handleStyle={{border:"solid 2px #3f51b5"}}
                         />
-                        <Typography id="label">Trasparency</Typography>
+                      </div>
+                      <div style={wrapperStyle}> 
+                        <Typography id="label2">Trasparency</Typography>
                         <Slider 
-                        value={this.state.displayParameters.transparency} 
-                        aria-labelledby="label" 
-                        onChange={this.handleChangeDisplay('transparency')} 
+                        min={0} 
+                        step={0.01}
+                        max={1}
+                        defaultValue={1} 
+                        onAfterChange={this.handleChangeDisplay('transparency')} 
+                        trackStyle={{backgroundColor:"#3f51b5"}}
+                        handleStyle={{border:"solid 2px #3f51b5"}}
                         />
-                      </Toolbar>
-                      </AppBar>
-                    </div>)
+                      </div>
+                  </div>)
                   :
                   <LinearProgress color="secondary" />
                 }
@@ -466,7 +547,7 @@ class Steps extends React.Component {
               </div>
               <div className={classes.buttonContainer}>
                 <Button onClick={this.handleReset} className={classes.button}>
-                  Reset
+                  BACK
                 </Button>
               </div>
               </div>

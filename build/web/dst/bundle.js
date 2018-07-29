@@ -53223,8 +53223,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var gradient = {
-    0: '#ffffff',
-    100: '#000000'
+    0: '#ADD8E6',
+    100: '#FF2500'
 };
 
 var Visualizer = function (_Component) {
@@ -53263,7 +53263,7 @@ var Visualizer = function (_Component) {
     }, {
         key: "logScale",
         value: function logScale(b, n) {
-            return Math.pow(Math.log(n) / Math.log(b), 2);
+            return Math.pow(Math.pow(Math.log(n) / Math.log(b), 2), 3);
         }
     }, {
         key: "valueToColor",
@@ -53323,7 +53323,7 @@ var Visualizer = function (_Component) {
                         var rgbColor = self.valueToColor(element.value, self.state.data.max_value);
                         var a = self.logScale(element.value, self.state.data.max_value);
                         if (element.value < _this2.state.minValue) return null;
-                        color = new _cesium2.default.Color(rgbColor.r / 255, rgbColor.g / 255, rgbColor.b / 255, _this2.state.transparency);
+                        color = new _cesium2.default.Color(rgbColor.r / 255, rgbColor.g / 255, rgbColor.b / 255, a);
 
                         if (self.state.pointShape == _visualization.figureEnum.CUBE) return _react2.default.createElement(_cesiumReact.Entity, {
                             key: index,

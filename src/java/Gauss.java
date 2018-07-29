@@ -4,8 +4,7 @@
  * and open the template in the editor.
  */
 
-import static Configuration.DEFAULT_AREA_DIMENSION;
-import static Configuration.DEFAULT_GRID;
+import others.Configuration;
 import calculation.DIMENSION;
 import calculation.Data;
 import java.io.IOException;
@@ -17,6 +16,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import static others.Configuration.DEFAULT_AREA_DIMENSION;
+import static others.Configuration.DEFAULT_GRID;
 
 /**
  *
@@ -112,8 +113,8 @@ public class Gauss extends HttpServlet {
         boolean _2d = (s_2d == null ? false : true);
         boolean _3d = (s_3d == null ? false: true);
         
-        double dimension = Double.parseDouble((s_dimension == null) ? DEFAULT_AREA_DIMENSION: s_dimension);
-        double grid = Double.parseDouble((s_grid == null) ? DEFAULT_GRID: s_grid);;
+        double dimension = (s_dimension == null) ? DEFAULT_AREA_DIMENSION: Double.parseDouble(s_dimension);
+        double grid = (s_grid == null) ? DEFAULT_GRID: Double.parseDouble(s_grid);
         
 
 

@@ -8,8 +8,8 @@ import {figureEnum} from '../constants/visualization';
 import PropTypes from 'prop-types';
 
 const gradient = {
-    0: '#ffffff',
-    100: '#000000'
+    0: '#ADD8E6',
+    100: '#FF2500'
   };
 
 class Visualizer extends Component {
@@ -40,7 +40,7 @@ class Visualizer extends Component {
     }
 
     logScale(b, n) {
-        return Math.pow(Math.log(n) / Math.log(b), 2);
+        return Math.pow(Math.pow(Math.log(n) / Math.log(b), 2), 3);
     }
 
     valueToColor(value, max_value){
@@ -87,10 +87,11 @@ class Visualizer extends Component {
                         sphere = new Cesium.Cartesian3(25,25,25);
                         cubePosition =  Cartesian3.fromDegrees(element.lon, element.lat, element.z);
                         const rgbColor = self.valueToColor(element.value, self.state.data.max_value);
-                        const a = self.logScale(element.value, self.state.data.max_value);
+                        const a = this.state.transparency;
+                        // const a = self.logScale(element.value, self.state.data.max_value);
                         if(element.value < this.state.minValue)
                             return null;
-                        color = new Cesium.Color(rgbColor.r/255, rgbColor.g/255, rgbColor.b/255, this.state.transparency) ;
+                        color = new Cesium.Color(rgbColor.r/255, rgbColor.g/255, rgbColor.b/255, a) ;
 
                         if(self.state.pointShape == figureEnum.CUBE)
                             return (<Entity

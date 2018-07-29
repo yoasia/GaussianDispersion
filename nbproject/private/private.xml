@@ -3,13 +3,12 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/resources/input.json</file>
-            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/data/STABILITY_CLASS.java</file>
+            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/calculation/Data.java</file>
             <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/Gauss.java</file>
-            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/gaussDemo3d.java</file>
-            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/data/Data.java</file>
-            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/data/kernels/JCudaGaussKernel.cu</file>
+            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/cuda/kernels/JCudaGaussKernel.cu</file>
+            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/others/Configuration.java</file>
             <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/gaussDemo2d.java</file>
+            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/nbproject/build-impl.xml</file>
         </group>
     </open-files>
 </project-private>

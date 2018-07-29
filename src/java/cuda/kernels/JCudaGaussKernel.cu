@@ -87,6 +87,17 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
              translation_y =  max * tan((360 - wind_dir_deg ) * PI/180);
         }
     }
+    if(translation_x > 0){
+            translation_x -= 1000;
+    }
+    else
+        translation_x += 1000;
+    
+    if(translation_y > 0){
+        translation_y -= 1000;
+    }
+    else
+        translation_y += 1000;
 
     //move point
     x += translation_x;

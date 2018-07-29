@@ -29,8 +29,8 @@ class Data extends React.Component {
 
     getData(){
         var self = this;
-        axios.get('/Server/gauss', {
-        // axios.get('/mockup/3d.json', {
+        // axios.get('/Server/gauss', {
+        axios.get('/mockup/3d'+Math.floor(Math.random() * 2 + 1)+'.json', {
             params: {
                 wind_speed: this.props.parameters.windSpeed,
                 wind_angle: this.props.parameters.windDirection,

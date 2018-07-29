@@ -4,9 +4,18 @@
  * and open the template in the editor.
  */
 
+import calculation.CSVUtils;
+import calculation.DIMENSION;
 import calculation.Data;
+import static calculation.Data.RESULT_PATH;
+import java.io.FileWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Random;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -434,18 +443,98 @@ public class DataTest {
 //        fail("The test case is a prototype.");
 //    }
 //
-//    /**
-//     * Test of calculate method, of class Data.
-//     */
-//    @Test
-//    public void testCalculate() throws Exception {
-//        System.out.println("calculate");
-//        DIMENSION dim = null;
-//        Data instance = new Data();
-//        instance.calculate(dim);
-//        // TODO review the generated test code and remove the default call to fail.
-//        fail("The test case is a prototype.");
-//    }
+    /**
+     * Test of calculate method, of class Data.
+     */
+    @Test
+    public void testCalculate() throws Exception {
+        boolean noResult = true;
+        double wind_speed_horizontal;
+        double wind_direction;
+        double release_height;
+        double source_strength;
+        double refflection_co = 1;
+        int stability_class_num;
+        double lon = 20;
+        double lat = 52;
+        double z0 = 0;
+        double a = 0;
+        double b = 0;
+        double p = 0;
+        double q = 0;
+        FileWriter writer;
+        String csvFileName;
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("DD-MM_HH-mm");
+        DIMENSION dim = DIMENSION.THREE;
+        Data instance;
+        
+        System.out.println("calculateGauss");
+
+        for (int i = 0; i < 100; i++) {
+            noResult = true;
+            System.out.println("TEST "+ i);
+            csvFileName = RESULT_PATH+sdf.format(cal.getTime()) +i+"_3d.csv";
+            writer = new FileWriter(csvFileName);
+
+            wind_speed_horizontal = Math.random() * 49.5 + 0.5;
+            wind_direction = Math.random() * 360 ;
+            release_height = Math.random() * 300 + 0;
+            source_strength = Math.random() * 1000 ; 
+            stability_class_num = (int) Math.random() * 5 + 1 ;
+            
+            
+            System.out.print("wind speed (u): "+wind_speed_horizontal + 
+                    "\nwind direction: "+ wind_direction + 
+                    "\nheight (H): " + release_height + 
+                    "\nsource strength (Q): " + source_strength + 
+                    "\nstability class:" + String.valueOf(stability_class_num) );
+
+            instance = new Data(wind_speed_horizontal, 
+                wind_direction, 
+                release_height,
+                source_strength,
+                refflection_co,
+                stability_class_num,
+                z0,
+                a,
+                b,
+                p,
+                q,
+                lon, 
+                lat);
+
+
+            instance.calculate(dim);
+            JSONObject resultObj = instance.getResult();
+            JSONArray result = (JSONArray) resultObj.get("result");
+            CSVUtils.writeLine(writer, Arrays.asList("x", "y", "z", "concentration"));
+            
+            for (int j = 0; j < result.size(); j++) {
+                JSONObject line = (JSONObject) result.get(i);
+                CSVUtils.writeLine(writer, Arrays.asList(line.get("x"), line.get("y"), line.get("z"), line.get("value")));
+                
+                if(Double.parseDouble((String)line.get("value")) > 0.0){
+                    noResult = false;
+                }
+            }
+            
+            writer.flush();
+            writer.close();
+            if(noResult){
+                System.err.println("Test failed.");
+            }
+            else{
+                System.out.println("Test Passed!");
+            }
+            
+            System.err.println(RESULT_PATH+sdf.format(cal.getTime()) +i+"_3d.csv");
+            System.err.println("");
+            
+            junit.framework.Assert.assertEquals(noResult, false);
+
+        }
+    }
 
     /**
      * Test of calculateTranslation method, of class Data.

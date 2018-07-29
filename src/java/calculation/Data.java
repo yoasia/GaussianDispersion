@@ -5,8 +5,6 @@
  */
 package calculation;
 
-import static Configuration.DEFAULT_AREA_DIMENSION;
-import static Configuration.DEFAULT_GRID;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -50,12 +48,13 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import static others.Configuration.DEFAULT_AREA_DIMENSION;
+import static others.Configuration.DEFAULT_GRID;
 
 /**
  *
  * @author Joanna
  */
-import javax.security.auth.login.Configuration;
 public class Data {
     public static final String MY_PATH = "/media/joanna/Linux/Studia/Magisterka/Server/";
     public static final String RESOURCE_PATH = MY_PATH+"src/resources/";
@@ -476,9 +475,21 @@ public class Data {
             }
             else{
                 result[0] = 0.0 - max;
-                 result[1] =  max * Math.tan((360 - angle ) * Math.PI/180);
+                result[1] =  max * Math.tan((360 - angle ) * Math.PI/180);
             }
         }
+        
+        if(result[0] > 0){
+            result[0] -= 1000;
+        }
+        else
+            result[0] += 1000;
+        
+        if(result[1] > 0){
+            result[1] -= 1000;
+        }
+        else
+            result[1] += 1000;
         
         return result;
     }
@@ -501,7 +512,7 @@ public class Data {
         String absolutePath = Data.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         absolutePath = absolutePath.substring(0, absolutePath.lastIndexOf("/"));
         absolutePath = absolutePath.substring(0, absolutePath.lastIndexOf("/")+1);
-        String ptxFileName =  preparePtxFile(absolutePath+"data/kernels/JCudaGaussKernel.cu");
+        String ptxFileName =  preparePtxFile(absolutePath+"cuda/kernels/JCudaGaussKernel.cu");
 
         // Initialize the driver and create a context for the first device.
         cuInit(0);
@@ -589,33 +600,35 @@ public class Data {
         
         for(int i = 0; i < numElements - 1; i++)
         {
-            JSONObject point = new JSONObject();
-            
-            int iz = (int) Math.floor((double)(i/(N*N)));
-            int iy = (int) Math.floor((double)(i%(N*N)/N));
-            int ix = (int) Math.floor((double)(i%(N*N)%N));
-            
-            double x = (int)((ix - (0.5*N))*grid);
-            double y = (int)((iy - (0.5*N))*grid);
-            int z = (int)(iz *grid);
-            x_tmp = x;
-            y_tmp = y;
-            
-            //point rotation
-            x = x_tmp*Math.cos(-wind_direction*Math.PI/180) - y_tmp*Math.sin(-wind_direction*Math.PI/180);
-            y = x_tmp*Math.sin(-wind_direction*Math.PI/180) + y_tmp*Math.cos(-wind_direction*Math.PI/180);
-            
-            
-            x_tmp = x;
-            y_tmp = y;
-            
-            x += translation_vector[0];
-            y += translation_vector[1];
+            if(hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i] && hostOutput[i] > 0.05){
+                
+                JSONObject point = new JSONObject();
 
-            double coordinates[] = calculateNewCoords(lon, lat, x, y);
-            
+                int iz = (int) Math.floor((double)(i/(N*N)));
+                int iy = (int) Math.floor((double)(i%(N*N)/N));
+                int ix = (int) Math.floor((double)(i%(N*N)%N));
+
+                double x = (int)((ix - (0.5*N))*grid);
+                double y = (int)((iy - (0.5*N))*grid);
+                int z = (int)(iz *grid);
+                x_tmp = x;
+                y_tmp = y;
+
+                //point rotation
+                x = x_tmp*Math.cos(-wind_direction*Math.PI/180) - y_tmp*Math.sin(-wind_direction*Math.PI/180);
+                y = x_tmp*Math.sin(-wind_direction*Math.PI/180) + y_tmp*Math.cos(-wind_direction*Math.PI/180);
+
+
+                x_tmp = x;
+                y_tmp = y;
+
+                x += translation_vector[0];
+                y += translation_vector[1];
+
+                double coordinates[] = calculateNewCoords(lon, lat, x, y);
+
                 //System.out.println(i+", "+j+", "+k+", "+hostOutput[index]); 
-            if(hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i] && hostOutput[i] > 0){
+            
                 
 //                if(dim == DIMENSION.THREE && hostOutput[i] > 0){
                 if(dim == DIMENSION.THREE){

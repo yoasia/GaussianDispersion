@@ -12,11 +12,17 @@ class Data extends React.Component {
         this.state = { 
             parameters: this.props.parameters,
             data:null,
+            centerLine:{
+                A:null,
+                B:null,
+                C:null
+            },
             downloaded:false
         };  
         this.emitter = this.props.emitter;
         this.getData = this.getData.bind(this);
         this.deleteData = this.deleteData.bind(this);
+        this.calculateCenterLine = this.calculateCenterLine.bind(this);
     }
 
     componentWillMount() {
@@ -29,8 +35,8 @@ class Data extends React.Component {
 
     getData(){
         var self = this;
-        // axios.get('/Server/gauss', {
-        axios.get('/mockup/3d'+Math.floor(Math.random() * 2 + 1)+'.json', {
+        axios.get('/Server/gauss', {
+        // axios.get('/mockup/3d'+Math.floor(Math.random() * 2 + 1)+'.json', {
             params: {
                 wind_speed: this.props.parameters.windSpeed,
                 wind_angle: this.props.parameters.windDirection,
@@ -46,12 +52,19 @@ class Data extends React.Component {
             }
         }).then(function (response) {
             console.log(response);
-            self.setState({downloaded:true, data:response.data})
+            self.calculateCenterLine(this.props.parameters.windDirection);
+            self.setState({downloaded:true, data:response.data});
             self.emitter.emit("dataDownloaded", response.data.max_value);
         }).catch(function (error) {
             console.log(error);
             self.emitter.emit("dataDownloaded", false);
         });
+    }
+
+    calculateCenterLine(angle){
+        if(angle > 90){
+            angle -= 180;
+        }
     }
 
     componentDidUpdate(prevProps, prevState) {

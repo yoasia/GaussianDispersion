@@ -50,15 +50,15 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import static others.Configuration.DEFAULT_AREA_DIMENSION;
 import static others.Configuration.DEFAULT_GRID;
+import static others.Configuration.RESOURCE_PATH;
+import static others.Configuration.RESULT_PATH;
 
 /**
  *
  * @author Joanna
  */
 public class Data {
-    public static final String MY_PATH = "/media/joanna/Linux/Studia/Magisterka/Server/";
-    public static final String RESOURCE_PATH = MY_PATH+"src/resources/";
-    public static final String RESULT_PATH = MY_PATH+"results/";
+    
 
     private static final int R = 6378137;
     
@@ -588,13 +588,19 @@ public class Data {
         double [][][] result3d = new double[N][N][N];
         double [][] result2d = new double[N][N];
         
+        //fill array for result with nulls
         for(int i = 0; i < N; i++){
             Arrays.fill(result2d[i], 0.0);
         }
         
+        //calculate dimension of area 
         max = (N * grid)/2;
+        //if angle > 360
         angle = (90 - wind_direction) % 360;
-        angle = (angle < 0) ? -angle : angle;
+        //if angle < 0
+        angle = (angle < 0) ? (angle + 360 * Math.floor(1 + (-1)*angle/360)) : angle;
+        
+        //calculate translation
         translation_vector = calculateTranslation(angle, max*2);
         
         
@@ -611,6 +617,7 @@ public class Data {
                 double x = (int)((ix - (0.5*N))*grid);
                 double y = (int)((iy - (0.5*N))*grid);
                 int z = (int)(iz *grid);
+                
                 x_tmp = x;
                 y_tmp = y;
 
@@ -627,11 +634,8 @@ public class Data {
 
                 double coordinates[] = calculateNewCoords(lon, lat, x, y);
 
-                //System.out.println(i+", "+j+", "+k+", "+hostOutput[index]); 
-            
                 
-//                if(dim == DIMENSION.THREE && hostOutput[i] > 0){
-                if(dim == DIMENSION.THREE){
+                if(dim == DIMENSION.THREE && hostOutput[i] > 0){
                     //Save to variable
                     point.put("lat", coordinates[0]);
                     point.put("lon", coordinates[1]);
@@ -650,8 +654,10 @@ public class Data {
                 if(result2d[ix][iy] > max_value )
                     max_value = result2d[ix][iy];
             }
-                
         }
+        
+        result.sort(new ResultComparator());
+        
         int i = 0;
         for(int x1 = 0; x1 < N; x1++){
             for(int y1 = 0; y1 < N; y1++){

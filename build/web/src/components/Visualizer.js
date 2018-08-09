@@ -64,9 +64,11 @@ class Visualizer extends Component {
     changePointShape (pointShape) {
         this.setState({pointShape});
     }
+
     changeTransparency (transparency) {
         this.setState({transparency});
     }
+
     changeMinValue (minValue) {
         this.setState({minValue});
     }

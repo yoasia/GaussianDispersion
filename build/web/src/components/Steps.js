@@ -223,10 +223,16 @@ class Steps extends React.Component {
             if(name == "lon" || name == "lat" || name == "height"){
                 parameters[name] = parseFloat(event.target.value);
                 emitter.emit("lonLatChanged", parameters.lon, parameters.lat, parameters.height);
+            } else if( name == 'windDirection'){
+                if(parseFloat(event.target.value) > 360)
+                  parameters[name] = (parseInt(event.target.value) % 360);
+                else if(parseFloat(event.target.value) < 0){
+                  parameters[name] = (parseInt(event.target.value) + 360 * Math.floor(1 + (-1) *parseInt(event.target.value)/360));
+                }
+                this.setState({parameters});
             } else{
                 this.setState({parameters});
             }
-    
         }
       };
 

@@ -39792,11 +39792,17 @@ var Data = function (_React$Component) {
         _this.state = {
             parameters: _this.props.parameters,
             data: null,
+            centerLine: {
+                A: null,
+                B: null,
+                C: null
+            },
             downloaded: false
         };
         _this.emitter = _this.props.emitter;
         _this.getData = _this.getData.bind(_this);
         _this.deleteData = _this.deleteData.bind(_this);
+        _this.calculateCenterLine = _this.calculateCenterLine.bind(_this);
         return _this;
     }
 
@@ -39815,7 +39821,7 @@ var Data = function (_React$Component) {
         value: function getData() {
             var self = this;
             _axios2.default.get('/Server/gauss', {
-                // axios.get('/mockup/3d.json', {
+                // axios.get('/mockup/3d'+Math.floor(Math.random() * 2 + 1)+'.json', {
                 params: {
                     wind_speed: this.props.parameters.windSpeed,
                     wind_angle: this.props.parameters.windDirection,
@@ -39831,12 +39837,20 @@ var Data = function (_React$Component) {
                 }
             }).then(function (response) {
                 console.log(response);
+                self.calculateCenterLine(this.props.parameters.windDirection);
                 self.setState({ downloaded: true, data: response.data });
                 self.emitter.emit("dataDownloaded", response.data.max_value);
             }).catch(function (error) {
                 console.log(error);
                 self.emitter.emit("dataDownloaded", false);
             });
+        }
+    }, {
+        key: 'calculateCenterLine',
+        value: function calculateCenterLine(angle) {
+            if (angle > 90) {
+                angle -= 180;
+            }
         }
     }, {
         key: 'componentDidUpdate',
@@ -53321,7 +53335,8 @@ var Visualizer = function (_Component) {
                         sphere = new _cesium2.default.Cartesian3(25, 25, 25);
                         cubePosition = _Cesium.Cartesian3.fromDegrees(element.lon, element.lat, element.z);
                         var rgbColor = self.valueToColor(element.value, self.state.data.max_value);
-                        var a = self.logScale(element.value, self.state.data.max_value);
+                        var a = _this2.state.transparency;
+                        // const a = self.logScale(element.value, self.state.data.max_value);
                         if (element.value < _this2.state.minValue) return null;
                         color = new _cesium2.default.Color(rgbColor.r / 255, rgbColor.g / 255, rgbColor.b / 255, a);
 
@@ -54322,6 +54337,11 @@ var _initialiseProps = function _initialiseProps() {
         if (name == "lon" || name == "lat" || name == "height") {
           parameters[name] = parseFloat(event.target.value);
           emitter.emit("lonLatChanged", parameters.lon, parameters.lat, parameters.height);
+        } else if (name == 'windDirection') {
+          if (parseFloat(event.target.value) > 360) parameters[name] = parseInt(event.target.value) % 360;else if (parseFloat(event.target.value) < 0) {
+            parameters[name] = parseInt(event.target.value) + 360 * Math.floor(1 + -1 * parseInt(event.target.value) / 360);
+          }
+          _this3.setState({ parameters: parameters });
         } else {
           _this3.setState({ parameters: parameters });
         }

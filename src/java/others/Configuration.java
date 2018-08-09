@@ -17,4 +17,8 @@ public class Configuration {
     
     public static final double DEFAULT_AREA_DIMENSION = 10000;
     public static final double DEFAULT_GRID = 50;
+    
+    public static final String MY_PATH = "/media/joanna/Linux/Studia/Magisterka/Server/";
+    public static final String RESOURCE_PATH = MY_PATH+"src/resources/";
+    public static final String RESULT_PATH = MY_PATH+"results/";
 }

@@ -22,6 +22,7 @@ import {figureEnum, DEFAULT_ALPHA} from '../constants/visualization';
 
 import 'rc-slider/assets/index.css';
 import 'rc-tooltip/assets/bootstrap.css';
+import Legend from './Legend';
 
 const Handle = Slider.Handle;
 var emitter;
@@ -53,6 +54,14 @@ const weatherStability=[
     }
 ]
 
+const sliderStyle = { 
+  width: 200, 
+  height: 200,
+  margin: "auto",
+  marginTop: "1em",
+  marginBottom: "1em",
+  paddingBottom: 60
+};
 const wrapperStyle = { 
   width: 200, 
   margin: "auto",
@@ -157,9 +166,11 @@ class Steps extends React.Component {
             displayParameters:{
               min_value:0,
               point_shape: figureEnum.CUBE,
-              transparency: DEFAULT_ALPHA
+              transparency: DEFAULT_ALPHA,
+              layers:0
             },
-            max_value: null,
+            rangesNumber:null,
+            maxValue: null,
             checkedA:true
           };
         this.textFieldValues = Object.assign({}, this.state.parameters);
@@ -172,6 +183,7 @@ class Steps extends React.Component {
         this.handleChange = this.handleChange.bind(this);
         this.handleChangeDisplay = this.handleChangeDisplay.bind(this);
         this.onFinish = this.onFinish.bind(this);
+        this.onDownloadGeoJSON = this.onDownloadGeoJSON.bind(this);
 
     }
 
@@ -189,9 +201,14 @@ class Steps extends React.Component {
     onFinish(){
       var self = this;
       this.props.onFinish(this.state.parameters);
-      emitter.on('dataDownloaded', (max_value)=>{
-          self.setState({downloaded: true, max_value });
+      emitter.on('dataDownloaded', (maxValue, rangesNumber)=>{
+          self.setState({downloaded: true, maxValue, rangesNumber});
       });
+    }
+
+    onDownloadGeoJSON(){
+      var self = this;
+      emitter.emit('onGeoJSONDownload');
     }
     
     /**
@@ -253,6 +270,9 @@ class Steps extends React.Component {
         }
         else if(name == "min_value"){
           emitter.emit("minValueChanged", value);
+        }
+        else if(name == "layers"){
+          emitter.emit("displayedLayerChanged", value);
         }
       };    
 
@@ -440,7 +460,7 @@ class Steps extends React.Component {
   handleReset = () => {
     this.setState({
       activeStep: 0,
-      max_value: null
+      maxValue: null
     });
     emitEventDraggableMarker(0);
     emitEventReset();
@@ -467,6 +487,15 @@ class Steps extends React.Component {
     const { classes } = this.props;
     const steps = getSteps();
     const { activeStep } = this.state;
+    const rangeValue = this.state.maxValue/this.state.rangesNumber;
+    var marks = {
+      0:' 0 - 1 [µg]',
+      1:'1 - '+ Math.round(rangeValue) + ' [µg]'
+    };
+
+    for (let index = 2; index < this.state.rangesNumber; index++) {
+      marks[index] =  index * Math.round(rangeValue) + ' - ' + (1 + index) * Math.round(rangeValue) + ' [µg]';
+    }
 
     return (
       <div className={classes.root}>
@@ -495,42 +524,34 @@ class Steps extends React.Component {
                 {
                   (this.state.downloaded == true) ? 
                   (
-                  <div style={{marginTop:"2em", marginBottom:"1em"}}>
-                      <Typography align='center' variant="display1" color="inherit">
-                        Display options
-                      </Typography>
-                      <div style={buttonFigureStyle}>
-                          <Button 
-                          variant={(this.state.displayParameters.point_shape == figureEnum.CUBE ? "contained" : "outlined")} 
-                          color={(this.state.displayParameters.point_shape == figureEnum.CUBE ? "primary" : "default")} 
-                          className={classes.buttonFigure}
-                          value={figureEnum.CUBE}
-                          onClick={this.handleChangeDisplay('point_shape', figureEnum.CUBE)}
-                          >
-                            Cubes
-                            <SquareIcon className={classes.rightIcon} />
-                          </Button>
-                          <Button  
-                          variant={(this.state.displayParameters.point_shape == figureEnum.SPHERE ? "contained" : "outlined")}
-                          color={(this.state.displayParameters.point_shape == figureEnum.SPHERE ? "primary" : "default")} 
-                          className={classes.buttonFigure}
-                          value={figureEnum.SPHERE}
-                          onClick={this.handleChangeDisplay('point_shape', figureEnum.SPHERE)}
-                          >
-                            Spheres
-                            <PanoramaFishEye className={classes.rightIcon} />
-                          </Button>
-                      </div>
-                      <div style={wrapperStyle}>
-                        <Typography id="label">Min value</Typography>
+                  <div style={{ marginBottom:"1em"}}>                      
+                      <div style={sliderStyle}> 
+                        <Typography id="label3">Show concentration </Typography>
                         <Slider 
-                        min={0.000001} 
-                        max={this.state.max_value/100} 
-                        step={this.state.max_value/10000}
-                        defaultValue={0} 
-                        onAfterChange={this.handleChangeDisplay('min_value')}
-                        trackStyle={{backgroundColor:"#3f51b5"}}
-                        handleStyle={{border:"solid 2px #3f51b5"}}
+                        min={0} 
+                        step={1}
+                        max={this.state.rangesNumber-1}
+                        marks={marks}
+                        defaultValue={this.state.rangesNumber-1} 
+                        onAfterChange={this.handleChangeDisplay('layers')} 
+                        minimumTrackStyle={{
+                          backgroundColor:"rgba(255, 255, 255, 0.9)",
+                        }}
+                        handleStyle={{
+                          border:"solid 2px #3f51b5",
+                        }}
+                        railStyle={{
+                          backgroundImage: 'linear-gradient('+
+                          'to bottom, '+
+                          '#FF284F, '+
+                          '#E8882C,'+ 
+                          '#FFE92C, '+
+                          '#42E839, '+
+                          '#5DFCFF)'
+                        }}
+                        dotStyle={{border:"solid 2px #3f51b5"}}
+                        dots
+                        vertical
                         />
                       </div>
                       <div style={wrapperStyle}> 
@@ -545,6 +566,7 @@ class Steps extends React.Component {
                         handleStyle={{border:"solid 2px #3f51b5"}}
                         />
                       </div>
+                      
                   </div>)
                   :
                   <LinearProgress color="secondary" />
@@ -554,6 +576,14 @@ class Steps extends React.Component {
               <div className={classes.buttonContainer}>
                 <Button onClick={this.handleReset} className={classes.button}>
                   BACK
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={this.onDownloadGeoJSON}
+                  className={classes.button}
+                >
+                  Download GeoJSON
                 </Button>
               </div>
               </div>

@@ -5,9 +5,8 @@
         <group>
             <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/calculation/Data.java</file>
             <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/Gauss.java</file>
-            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/calculation/QuickSortResult.java</file>
-            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/others/Configuration.java</file>
-            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/calculation/ResultComparator.java</file>
+            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/cuda/kernels/JCudaGaussKernel.cu</file>
+            <file>file:/media/joanna/Linux/Studia/Magisterka/Server/src/java/gaussDemo2d.java</file>
         </group>
     </open-files>
 </project-private>

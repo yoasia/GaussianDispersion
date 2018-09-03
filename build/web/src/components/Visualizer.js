@@ -2,15 +2,11 @@ import React, { Component } from 'react';
 import {  Cartesian3, BoundingSphere, Color } from "cesium/Cesium";
 import {  Entity } from "cesium-react";
 import Cesium from 'cesium';
-import getColorFromGradient from 'gpotter-gradient';
 import {figureEnum} from '../constants/visualization';
+import {gradient} from '../constants/visualization';
+import {valueToColor} from '../constants/visualization';
 
 import PropTypes from 'prop-types';
-
-const gradient = {
-    0: '#ADD8E6',
-    100: '#FF2500'
-  };
 
 class Visualizer extends Component {
     constructor(props) {
@@ -19,13 +15,15 @@ class Visualizer extends Component {
             data:this.props.data,
             pointShape:figureEnum.CUBE,
             transparency:1,
-            minValue:0
+            minValue:0,
+            currentLayer:null
         }
         this.emitter = this.props.emitter;
 
         this.changePointShape = this.changePointShape.bind(this);
         this.changeTransparency = this.changeTransparency.bind(this);
         this.changeMinValue = this.changeMinValue.bind(this);
+        this.changeDisplayedLayer = this.changeDisplayedLayer.bind(this);
 
     }
 
@@ -35,7 +33,10 @@ class Visualizer extends Component {
             this.setState({pointShape:this.props.pointShape});
         }
         if (this.props.data !== prevProps.data) {
-            this.setState({data:this.props.data});
+            this.setState({data:this.props.data,             
+                currentLayer:Object.keys(this.props.data.result).length - 1
+            });
+            
         }
     }
 
@@ -43,22 +44,12 @@ class Visualizer extends Component {
         return Math.pow(Math.pow(Math.log(n) / Math.log(b), 2), 3);
     }
 
-    valueToColor(value, max_value){
-        const color = getColorFromGradient(gradient, (value/max_value) * 100); // #882737
-        
-        var r, g, b;
-
-        r = parseInt(color.substring(1, 3), 16);
-        g = parseInt(color.substring(3, 5), 16);
-        b = parseInt(color.substring(5), 16);
-        
-        return {r, g, b};
-    }
 
     componentWillMount() {
         this.emitter.on('pointShapeChanged', this.changePointShape);
         this.emitter.on('transparencyChanged', this.changeTransparency);
         this.emitter.on('minValueChanged', this.changeMinValue);   
+        this.emitter.on('displayedLayerChanged', this.changeDisplayedLayer);   
     }
 
     changePointShape (pointShape) {
@@ -73,30 +64,34 @@ class Visualizer extends Component {
         this.setState({minValue});
     }
 
+    changeDisplayedLayer (currentLayer) {
+        this.setState({currentLayer});
+    }
+
     render() {
         var cube = null;
         var sphere = null;
         var cubePosition =  null;
         var color = null;
+        var boxes = [];
         const self = this;
 
         if(this.state.data){
 
-            return (
-                <div>
-                    {this.state.data.result.map((element, index) => {
-                        cube = new Cesium.Cartesian3(50,50,50);
-                        sphere = new Cesium.Cartesian3(25,25,25);
-                        cubePosition =  Cartesian3.fromDegrees(element.lon, element.lat, element.z);
-                        const rgbColor = self.valueToColor(element.value, self.state.data.max_value);
-                        const a = this.state.transparency;
-                        // const a = self.logScale(element.value, self.state.data.max_value);
-                        if(element.value < this.state.minValue)
-                            return null;
-                        color = new Cesium.Color(rgbColor.r/255, rgbColor.g/255, rgbColor.b/255, a) ;
+            for (let i = 0; i <= Object.keys(self.state.data.result).length - 1 - this.state.currentLayer; i++) {
+                this.state.data.result['range'+i].forEach((element, index) => {
+                    cube = new Cesium.Cartesian3(50,50,50);
+                    sphere = new Cesium.Cartesian3(25,25,25);
+                    cubePosition =  Cartesian3.fromDegrees(element.lon, element.lat, element.z);
+                    const rgbColor = valueToColor(i*(self.state.data.max_value/Object.keys(self.state.data.result).length), self.state.data.max_value);
+                    const a = this.state.transparency;
+                    // const a = self.logScale(element.value, self.state.data.max_value);
+                    if(element.value < this.state.minValue)
+                        return null;
+                    color = new Cesium.Color(rgbColor.r/255, rgbColor.g/255, rgbColor.b/255, a) ;
 
-                        if(self.state.pointShape == figureEnum.CUBE)
-                            return (<Entity
+                    if(self.state.pointShape == figureEnum.CUBE)
+                        boxes.push((<Entity
                             key={index}
                             name = {'Gas concentration'}
                             description={element.value}
@@ -106,21 +101,26 @@ class Visualizer extends Component {
                                 material:color,
                             }}
                             >
-                            </Entity>)
-                        else
-                            return (<Entity
-                                key={index}
-                                name = {'Gas concentration'}
-                                description={element.value}
-                                position={cubePosition}
-                                ellipsoid = {{
-                                    radii : sphere,
-                                    material: color,
-                                }}
-                                >
-                                </Entity>)
-                     })} 
-                    
+                            </Entity>))
+                    else
+                        boxes.push((<Entity
+                            key={index}
+                            name = {'Gas concentration'}
+                            description={element.value}
+                            position={cubePosition}
+                            ellipsoid = {{
+                                radii : sphere,
+                                material: color,
+                            }}
+                            >
+                            </Entity>))
+                 })
+                
+            }
+
+            return (
+                <div>
+                    {boxes} 
                 </div>
             );
         } else{

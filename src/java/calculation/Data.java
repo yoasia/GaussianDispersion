@@ -48,10 +48,19 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import static others.Configuration.DEFAULT_AREA_DIMENSION;
-import static others.Configuration.DEFAULT_GRID;
-import static others.Configuration.RESOURCE_PATH;
-import static others.Configuration.RESULT_PATH;
+import static constants.Configuration.DEFAULT_AREA_DIMENSION;
+import static constants.Configuration.DEFAULT_GRID;
+import static constants.Configuration.NO_OUTPUT_HEIGHT;
+import static constants.Configuration.RESOURCE_PATH;
+import static constants.Configuration.RESULT_PATH;
+import static constants.Configuration.NUMBER_OF_DATA_RANGES;
+import static java.lang.Double.parseDouble;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -81,8 +90,10 @@ public class Data {
     private double d;
     private double lon;
     private double lat;
+    private double output_height;
     private int N;
     private JSONArray result;
+    private JSONObject sortedResult;
     private double max_value = Double.NEGATIVE_INFINITY;
     
     public Data(){
@@ -103,9 +114,11 @@ public class Data {
     double q_,
     double lon_,
     double lat_,
+    double output_h_,
     double ... optional) throws IOException {
         double area_dimension_ = optional.length > 0 ? optional[0] : DEFAULT_AREA_DIMENSION;
         double grid_ = optional.length > 1 ? optional[1] : DEFAULT_GRID;
+        double _output_h = output_h_;
         
         init(wind_speed_horizontal_,
         wind_direction_,
@@ -119,6 +132,7 @@ public class Data {
         p_,
         q_,
         lon_, lat_,
+        output_h_,
         area_dimension_,
         grid_ );
 
@@ -138,6 +152,7 @@ public class Data {
     double q_,
     double lon_,
     double lat_,
+    double output_h_,
     double ... optional) throws IOException {
         this.wind_speed_horizontal = wind_speed_horizontal_;
         this.wind_direction = wind_direction_;
@@ -152,7 +167,8 @@ public class Data {
         this.z0 = z0_;
         this.lon = lon_;
         this.lat = lat_;
-        
+        this.output_height = output_h_;
+
         double area_dimension_ = optional.length > 0 ? optional[0] : DEFAULT_AREA_DIMENSION;
         double grid_ = optional.length > 1 ? optional[1] : DEFAULT_GRID;
 
@@ -203,6 +219,7 @@ public class Data {
             q,
             lon,
             lat,
+            NO_OUTPUT_HEIGHT,
             area_dimension,
             grid);
             
@@ -214,15 +231,83 @@ public class Data {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-
     }
     
     public JSONObject getResult() {
         JSONObject returnObject = new JSONObject();
-        returnObject.put("result", result);
+        returnObject.put("result", sortedResult);
         returnObject.put("max_value", max_value);
+        returnObject.put("unit", "µg");
         return returnObject;
     }
+    
+    public JSONObject getGeoJSON(){
+        JSONObject returnObject = new JSONObject();
+        JSONArray features = createGeoJSON();
+        returnObject.put("features", features);
+             
+        return returnObject;
+    }
+    
+    public JSONArray createGeoJSON(){
+        JSONObject geoJSON = new JSONObject();
+        geoJSON.put("type", "FeatureCollection");
+
+        JSONArray features = new JSONArray();
+        final Map<String, Object> data2d = new HashMap<>();
+        
+        //Add up data (geoJSON is in 2d) 
+        for (int index = 0; index < result.size(); index++) {
+            JSONObject element = (JSONObject) result.get(index);
+
+            if(data2d.get(element.get("lat")+","+element.get("lon")) != null){
+                    data2d.put(data2d.get("lat")+","+data2d.get("lon"),  (double)data2d.get("value") + (double)element.get("value"));
+            }
+            else{
+                data2d.put(data2d.get("lat")+","+data2d.get("lon"), (double)element.get("value"));
+            }
+        }
+
+        //Create geoJSON content
+        for (Map.Entry<String, Object> point : data2d.entrySet()) {
+            String key = point.getKey();
+            double lat, lon;
+            String[] parts = key.split(",");
+            lat = parseDouble(parts[0]);
+            lon = parseDouble(parts[1]);
+            Object value = point.getValue();
+            
+//          Feature format:
+//          {
+//                "type": "Feature",
+//                "geometry": {
+//                  "type": "Point",
+//                  "coordinates": [Lon, Lat]
+//                },
+//                "properties": {
+//                  "value": [value]
+//                }
+//          } 
+
+            JSONObject feature = new JSONObject();
+            JSONObject geometry = new JSONObject();
+            JSONObject properties = new JSONObject();
+
+            geometry.put("type", "Point");
+            geometry.put("coordinates", "["+lon+","+lat+"]");
+            properties.put("value", value);
+            
+            feature.put("type", "Feature");
+            feature.put("geometry", geometry);
+            feature.put("properties", properties);
+                        
+            features.add(feature);
+        }
+        
+
+        return features;
+    }
+
 
     public double getWind_speed_horizontal() {
         return wind_speed_horizontal;
@@ -338,7 +423,7 @@ public class Data {
     }
     
     public void calculate(DIMENSION dim) throws IOException{
-        calculateGauss(dim);
+            calculateGauss(dim);
     }
         
         /**
@@ -504,7 +589,7 @@ public class Data {
         double x_tmp, y_tmp, max;
         double angle;
         double translation_vector[] = new double[2];
-        
+        int tmp[] = new int[6]; 
         // Enable exceptions and omit all subsequent error checks
         JCudaDriver.setExceptionsEnabled(true);
 
@@ -547,6 +632,7 @@ public class Data {
             Pointer.to(new int[]{stability_class_num}),
             Pointer.to(new double[]{grid}),
             Pointer.to(new double[]{release_height}),
+            Pointer.to(new double[]{output_height}),
             Pointer.to(deviceOutput)            
         );
 
@@ -653,6 +739,25 @@ public class Data {
                 //Save max value
                 if(result2d[ix][iy] > max_value )
                     max_value = result2d[ix][iy];
+                
+                if(hostOutput[i] < 5){
+                    tmp[0] +=1;
+                }
+                else if( hostOutput[i] < 100){
+                    tmp[1] +=1;
+                }
+                else if( hostOutput[i] < 500){
+                    tmp[2] +=1;
+                }
+                else if( hostOutput[i] < 1000){
+                    tmp[3] +=1;
+                }
+                else if( hostOutput[i] < 5000){
+                    tmp[4] +=1;
+                }
+                else {
+                    tmp[5] +=1;
+                }
             }
         }
         
@@ -709,10 +814,17 @@ public class Data {
     
             }
         }
-        // retrieve image
-    File outputfile = new File(RESULT_PATH+sdf.format(cal.getTime())+".bmp");
-    ImageIO.write(img, "png", outputfile);
         
+        //sort results
+        result = sortResult(result);
+        
+        //create ranges
+        sortedResult = createRanges(result, max_value);
+
+        // retrieve image
+        File outputfile = new File(RESULT_PATH+sdf.format(cal.getTime())+".bmp");
+        ImageIO.write(img, "png", outputfile);
+
         writer.flush();
         writer.close();
         writer2.flush();
@@ -772,4 +884,77 @@ public class Data {
             
         return degrees;
     }
+    
+    public JSONArray sortResult( JSONArray jsonArr){
+
+        JSONArray sortedJsonArray = new JSONArray();
+
+        List<JSONObject> jsonValues = new ArrayList<JSONObject>();
+        
+        for (int i = 0; i < jsonArr.size(); i++) {
+            jsonValues.add((JSONObject) jsonArr.get(i));
+        }
+        Collections.sort( jsonValues, new Comparator<JSONObject>() {
+            //You can change "Name" with "ID" if you want to sort by ID
+            private static final String KEY_NAME = "value";
+
+            @Override
+            public int compare(JSONObject a, JSONObject b) {
+                double valA = 0.0;
+                double valB = 0.0;
+
+                valA = (double) a.get(KEY_NAME); //do something
+                valB = (double) b.get(KEY_NAME);
+                
+                if(valA < valB)
+                    return 1;
+                else if (valA > valB)
+                    return -1;
+                else
+                    return 0;
+
+                //if you want to change the sort order, simply use the following:
+                //return -valA.compareTo(valB);
+            }
+        });
+
+        for (int i = 0; i < jsonArr.size(); i++) {
+            sortedJsonArray.add(jsonValues.get(i));
+        }
+        return sortedJsonArray;
+                
+    }
+    
+    public JSONObject createRanges(JSONArray jsonArr, double maxValue){
+        JSONObject resultWithRanges = new JSONObject();
+        JSONArray rangeData[] = new JSONArray[NUMBER_OF_DATA_RANGES+2];
+        
+        for (int i = 0; i < rangeData.length; i++) {
+            rangeData[i] = new JSONArray();
+            
+        }
+
+        double rangeValue = maxValue/NUMBER_OF_DATA_RANGES;
+        
+        for (int i = 0; i < jsonArr.size(); i++) {
+            JSONObject obj = (JSONObject) jsonArr.get(i);
+            
+            if((double)(obj.get("value"))<= 1.0){
+                rangeData[0].add(jsonArr.get(i));
+            } else  {
+                double indexD = (double)(obj.get("value"))/rangeValue;
+                int index = (int) Math.floor(indexD+1);
+                rangeData[index].add(obj);
+            }
+            
+        }
+        
+        for (int i = 0; i < NUMBER_OF_DATA_RANGES + 2; i++) {
+            resultWithRanges.put("range"+String.valueOf(NUMBER_OF_DATA_RANGES+1 - i), rangeData[i]);
+        }
+
+        return resultWithRanges;
+    }
+
+
 }

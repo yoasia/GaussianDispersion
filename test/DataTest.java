@@ -7,7 +7,6 @@
 import calculation.CSVUtils;
 import calculation.DIMENSION;
 import calculation.Data;
-import static calculation.Data.RESULT_PATH;
 import java.io.FileWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,7 +19,7 @@ import org.json.simple.JSONObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import static constants.Configuration.RESULT_PATH;
 
 /**
  *

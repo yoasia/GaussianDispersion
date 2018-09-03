@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-import others.Configuration;
+import constants.Configuration;
 import calculation.DIMENSION;
 import calculation.Data;
 import java.io.IOException;
@@ -16,8 +16,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import static others.Configuration.DEFAULT_AREA_DIMENSION;
-import static others.Configuration.DEFAULT_GRID;
+import static constants.Configuration.DEFAULT_AREA_DIMENSION;
+import static constants.Configuration.DEFAULT_GRID;
+import static constants.Configuration.NO_OUTPUT_HEIGHT;
 
 /**
  *
@@ -58,9 +59,11 @@ public class Gauss extends HttpServlet {
         String s_dimension = request.getParameter("dimension");
         String s_lon = request.getParameter("lon");
         String s_lat = request.getParameter("lat");
+        String s_output_h = request.getParameter("output_h");
         String s_2d = request.getParameter("_2d");
         String s_3d = request.getParameter("_3d");
-
+        String content_type = request.getContentType();
+        
         //Check if user set every parametr
         if(s_wind_speed_horizontal == null
         || s_wind_direction == null
@@ -87,6 +90,7 @@ public class Gauss extends HttpServlet {
                 json.put("s_lat",s_lat);
                 json.put("s_2d",s_2d);
                 json.put("s_3d",s_3d);
+                json.put("s_output_h",s_output_h);
                  
                  // finally output the json string       
                 out.print(json);
@@ -112,6 +116,7 @@ public class Gauss extends HttpServlet {
         double q = Double.parseDouble((s_q == null) ? "0": s_q);
         boolean _2d = (s_2d == null ? false : true);
         boolean _3d = (s_3d == null ? false: true);
+        double _output_h = (s_output_h == null ? NO_OUTPUT_HEIGHT : Double.parseDouble(s_output_h));
         
         double dimension = (s_dimension == null) ? DEFAULT_AREA_DIMENSION: Double.parseDouble(s_dimension);
         double grid = (s_grid == null) ? DEFAULT_GRID: Double.parseDouble(s_grid);
@@ -132,7 +137,8 @@ public class Gauss extends HttpServlet {
             lon, 
             lat,
             dimension,
-            grid);
+            grid, 
+            _output_h);
         
         if(_2d == true)
             data.calculate(DIMENSION.TWO);

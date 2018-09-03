@@ -1,6 +1,7 @@
 import React from 'react';
 import EventEmitter from 'event-emitter';
 import axios from 'axios';
+import { saveAs } from 'file-saver/FileSaver';
 
 import Map from './Map';
 
@@ -23,20 +24,87 @@ class Data extends React.Component {
         this.getData = this.getData.bind(this);
         this.deleteData = this.deleteData.bind(this);
         this.calculateCenterLine = this.calculateCenterLine.bind(this);
+        this.createGeoJSON = this.createGeoJSON.bind(this);
     }
 
     componentWillMount() {
         this.emitter.on('reset', this.deleteData);
+        this.emitter.on('onGeoJSONDownload', this.createGeoJSON);
     }
 
     deleteData(){
         this.setState({data:null, downloaded:false})
     }
 
+    createGeoJSON(){
+        var geoJSON = {
+            type: "FeatureCollection",
+            features:null
+        };
+        var features = [];
+        var data2d = {};
+
+        //Add up data (geoJSON is in 2d) 
+        for (let index = 0; index < Object.keys(this.state.data.result).length; index++) {
+            for (const point in this.state.data.result['range'+index]) {
+                if (this.state.data.result['range'+index].hasOwnProperty(point)) {
+                    const element = this.state.data.result['range'+index][point];
+
+                    if(data2d[element.lat]){
+                        if(data2d[element.lat][element.lon]){
+                            data2d[element.lat][element.lon] += element.value;
+                        }
+                        else{
+                            data2d[element.lat][element.lon] = element.value;
+                        }
+                    }
+                    else{
+                        data2d[element.lat] = {};
+                        data2d[element.lat][element.lon] = element.value;
+                    }
+                }
+            }
+        }
+
+        //Create geoJSON content
+        for (const keyLat in data2d) {
+            if (data2d.hasOwnProperty(keyLat)) {
+                const object = data2d[keyLat];
+                for (const keyLon in object) {
+                    if (object.hasOwnProperty(keyLon)) {
+                        const value = object[keyLon];
+                        features.push(
+                            {
+                                "type": "Feature",
+                                "geometry": {
+                                  "type": "Point",
+                                  "coordinates": [parseFloat(keyLon), parseFloat(keyLat)]
+                                },
+                                "properties": {
+                                  "value": value
+                                }
+                            }  
+                        )
+                    }
+                }
+            }
+        }
+
+        geoJSON.features = features;
+
+        this.saveFile(geoJSON);
+        
+    }
+
+    saveFile(file){
+        var blob = new Blob([JSON.stringify(file, null, 2)], {type: "application/geo+json"});
+        saveAs(blob, "gas_despersion.json");
+    }
+
     getData(){
         var self = this;
         axios.get('/Server/gauss', {
-        // axios.get('/mockup/3d'+Math.floor(Math.random() * 2 + 1)+'.json', {
+        // axios.get('/mockup/3d'+Math.floor(Math.random() * 2 + 3)+'.json', {
             params: {
                 wind_speed: this.props.parameters.windSpeed,
                 wind_angle: this.props.parameters.windDirection,
@@ -52,9 +120,9 @@ class Data extends React.Component {
             }
         }).then(function (response) {
             console.log(response);
-            self.calculateCenterLine(this.props.parameters.windDirection);
+            self.calculateCenterLine(self.props.parameters.windDirection);
             self.setState({downloaded:true, data:response.data});
-            self.emitter.emit("dataDownloaded", response.data.max_value);
+            self.emitter.emit("dataDownloaded", response.data.max_value, Object.keys(response.data.result).length);
         }).catch(function (error) {
             console.log(error);
             self.emitter.emit("dataDownloaded", false);

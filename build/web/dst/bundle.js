@@ -40347,7 +40347,7 @@ var Data = function (_React$Component) {
         value: function getData() {
             var self = this;
             _axios2.default.get('/Server/gauss', {
-                // axios.get('/mockup/3d'+Math.floor(Math.random() * 2 + 3)+'.json', {
+                //  axios.get('/mockup/3d'+Math.floor(Math.random() * 2 + 3)+'.json', {
                 params: {
                     wind_speed: this.props.parameters.windSpeed,
                     wind_angle: this.props.parameters.windDirection,
@@ -54882,12 +54882,12 @@ var Steps = function (_React$Component) {
 
       var rangeValue = this.state.maxValue / this.state.rangesNumber;
       var marks = {
-        0: ' 0 - 1 [mg] ',
-        1: '1 - ' + Math.round(rangeValue) + ' [mg]'
+        0: ' 0 - 1 [µg]',
+        1: '1 - ' + Math.round(rangeValue) + ' [µg]'
       };
 
       for (var index = 2; index < this.state.rangesNumber; index++) {
-        marks[index] = index * Math.round(rangeValue) + ' - ' + (1 + index) * Math.round(rangeValue) + ' [mg]';
+        marks[index] = index * Math.round(rangeValue) + ' - ' + (1 + index) * Math.round(rangeValue) + ' [µg]';
       }
 
       return _react2.default.createElement(
@@ -54951,7 +54951,7 @@ var Steps = function (_React$Component) {
                       defaultValue: this.state.rangesNumber - 1,
                       onAfterChange: this.handleChangeDisplay('layers'),
                       minimumTrackStyle: {
-                        backgroundColor: "rgba(255, 255, 255, 0.7)"
+                        backgroundColor: "rgba(255, 255, 255, 0.9)"
                       },
                       handleStyle: {
                         border: "solid 2px #3f51b5"

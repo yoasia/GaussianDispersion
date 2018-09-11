@@ -632,7 +632,6 @@ public class Data {
             Pointer.to(new int[]{stability_class_num}),
             Pointer.to(new double[]{grid}),
             Pointer.to(new double[]{release_height}),
-            Pointer.to(new double[]{output_height}),
             Pointer.to(deviceOutput)            
         );
 

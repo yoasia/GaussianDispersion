@@ -3,8 +3,9 @@
 #include<math.h>
 extern "C"
 
-__global__ void gauss(int n, double Q, double u, double wind_dir, int stability, double grid, double H, double output_height, double *result )
+__global__ void gauss(int n, double Q, double u, double wind_dir, int stability, double grid, double H,  double *result )
 {
+
     double x, y, z; //Point coordinates
     double sigY, sigZ; //Sigmas
     double PI = 3.1415926535897;
@@ -36,9 +37,6 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
     y = (iy - (0.5*n))*grid;
     z = iz * grid;
 
-    if(output_height < -418){
-        z = output_height;
-    }
 
     x_tmp = x;
     y_tmp = y;
@@ -116,6 +114,7 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
 
     //distance vector
     distance = sqrt(x*x + y*y);
+    
     //calculate wind_dir_deg between wind vector and position vector
     alpha = acos((x*windX + y*windY)/(u*distance));
 
@@ -330,6 +329,7 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
         (exp((-1.0)*pow(z - H, 2)/(2.0*pow(sigZ, 2))) + //3a
         exp((-1.0)*pow(z + H, 2)/2.0*pow(sigZ, 2))) * 1000000; //3b
     }  
+
 }
 
 

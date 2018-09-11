@@ -489,12 +489,12 @@ class Steps extends React.Component {
     const { activeStep } = this.state;
     const rangeValue = this.state.maxValue/this.state.rangesNumber;
     var marks = {
-      0:' 0 - 1 [mg] ',
-      1:'1 - '+ Math.round(rangeValue) + ' [mg]'
+      0:' 0 - 1 [µg]',
+      1:'1 - '+ Math.round(rangeValue) + ' [µg]'
     };
 
     for (let index = 2; index < this.state.rangesNumber; index++) {
-      marks[index] =  index * Math.round(rangeValue) + ' - ' + (1 + index) * Math.round(rangeValue)+ ' [mg]';
+      marks[index] =  index * Math.round(rangeValue) + ' - ' + (1 + index) * Math.round(rangeValue) + ' [µg]';
     }
 
     return (
@@ -535,7 +535,7 @@ class Steps extends React.Component {
                         defaultValue={this.state.rangesNumber-1} 
                         onAfterChange={this.handleChangeDisplay('layers')} 
                         minimumTrackStyle={{
-                          backgroundColor:"rgba(255, 255, 255, 0.7)",
+                          backgroundColor:"rgba(255, 255, 255, 0.9)",
                         }}
                         handleStyle={{
                           border:"solid 2px #3f51b5",

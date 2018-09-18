@@ -26,3 +26,5 @@
 
 /web/dst/
 /dist/
+/build/
+.vscode

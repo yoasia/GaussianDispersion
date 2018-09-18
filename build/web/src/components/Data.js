@@ -93,7 +93,6 @@ class Data extends React.Component {
         geoJSON.features = features;
 
         this.saveFile(geoJSON);
-        
     }
 
     saveFile(file){
@@ -103,8 +102,8 @@ class Data extends React.Component {
 
     getData(){
         var self = this;
-        axios.get('/Server/gauss', {
-    //  axios.get('/mockup/3d'+Math.floor(Math.random() * 2 + 3)+'.json', {
+       axios.get('/Server/gauss', {
+      //axios.get('/mockup/3d'+Math.floor(Math.random() * 2 + 3)+'.json', {
             params: {
                 wind_speed: this.props.parameters.windSpeed,
                 wind_angle: this.props.parameters.windDirection,
@@ -113,9 +112,10 @@ class Data extends React.Component {
                 reffl: this.props.parameters.refflectionCo,
                 stb_class: this.props.parameters.weatherStabilityClass,
                 grid: this.props.parameters.grid,
-                dimension: this.props.parameters.areaDimension,
                 lon: this.props.parameters.lon,
                 lat: this.props.parameters.lat,
+                output_h:this.props.parameters.outputH,
+                dimension: this.props.parameters.calculationArea,
                 _3d: true
             }
         }).then(function (response) {

@@ -11,10 +11,10 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
     double PI = 3.1415926535897;
     double distance;
     double windX, windY;
-    double alpha;
+    double theta;
     double downwind, crosswind;
     double a, b, c, d;
-    double theta;
+    double beta;
     double x_tmp;
     double y_tmp;
     double max;
@@ -33,8 +33,8 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
 
 
     //calculate point coordinates in m
-    x = (ix - (0.5*n))*grid;
-    y = (iy - (0.5*n))*grid;
+    x = ix - (0.5*n)*grid;
+    y = iy - (0.5*n)*grid;
     z = iz * grid;
 
 
@@ -89,38 +89,27 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
              translation_y =  max * tan((360 - wind_dir_deg ) * PI/180);
         }
     }
-    if(translation_x > 0){
-            translation_x -= 1000;
-    }
-    else
-        translation_x += 1000;
-    
-    if(translation_y > 0){
-        translation_y -= 1000;
-    }
-    else
-        translation_y += 1000;
+
 
     //move point
     x += translation_x;
     y += translation_y;
 
-
     int resultIndex = (iz * n * n) + (iy * n) + ix;
 
     //calculate wind x and wind y (it winds from wind_dir -180)
-    windX = u * sin((wind_dir - 180)*PI/180);
-    windY = u * cos((wind_dir - 180)*PI/180);
+    windX = u * sin((wind_dir_deg - 180)*PI/180);
+    windY = u * cos((wind_dir_deg - 180)*PI/180);
 
     //distance vector
     distance = sqrt(x*x + y*y);
     
     //calculate wind_dir_deg between wind vector and position vector
-    alpha = acos((x*windX + y*windY)/(u*distance));
+    theta = acos((x*windX + y*windY)/(u*distance));
 
     //scalar projection
-    downwind = distance * cos(alpha);
-    crosswind = distance * sin(alpha);
+    downwind = distance * cos(theta);
+    crosswind = distance * sin(theta);
 
     //Definition of parametrs a, b, c and d
     switch(stability){
@@ -319,8 +308,8 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
     if(sigZ > 5000)
         sigZ = 5000;
     
-    theta=0.017453293*(c-d*log(downwind/1000));
-    sigY=465.11628*downwind/1000*tan(theta);
+    beta=0.017453293*(c-d*log(downwind/1000));
+    sigY=465.11628*downwind/1000*tan(beta);
 
     if (ix<n && iy<n && iz<n)
     {

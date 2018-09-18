@@ -5,9 +5,6 @@
  */
 package calculation;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -16,13 +13,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import static java.lang.Double.NaN;
 import static java.lang.Math.toIntExact;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.driver.CUcontext;
@@ -39,21 +34,21 @@ import static jcuda.driver.JCudaDriver.cuLaunchKernel;
 import static jcuda.driver.JCudaDriver.cuMemAlloc;
 import static jcuda.driver.JCudaDriver.cuMemFree;
 import static jcuda.driver.JCudaDriver.cuMemcpyDtoH;
-import static jcuda.driver.JCudaDriver.cuMemcpyHtoD;
 import static jcuda.driver.JCudaDriver.cuModuleGetFunction;
 import static jcuda.driver.JCudaDriver.cuModuleLoad;
-import jcuda.vec.VecDouble;
 import jdk.nashorn.internal.objects.Global;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import static constants.Configuration.DEFAULT_AREA_DIMENSION;
-import static constants.Configuration.DEFAULT_GRID;
+import static constants.Configuration.MAX_AREA_DIMENSION;
+import static constants.Configuration.MAX_AREA_DIMENSION;
+import static constants.Configuration.MAX_NUMBER_OF_POINTS;
 import static constants.Configuration.NO_OUTPUT_HEIGHT;
 import static constants.Configuration.RESOURCE_PATH;
 import static constants.Configuration.RESULT_PATH;
 import static constants.Configuration.NUMBER_OF_DATA_RANGES;
+import static constants.Configuration.SAVE_RESULT_IMAGE;
 import static java.lang.Double.parseDouble;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,6 +56,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import static constants.Configuration.DEFAULT_AREA_HEIGHT;
 
 /**
  *
@@ -116,10 +112,10 @@ public class Data {
     double lat_,
     double output_h_,
     double ... optional) throws IOException {
-        double area_dimension_ = optional.length > 0 ? optional[0] : DEFAULT_AREA_DIMENSION;
-        double grid_ = optional.length > 1 ? optional[1] : DEFAULT_GRID;
+        double area_dimension_ = optional.length > 0 ? optional[0] : MAX_AREA_DIMENSION;
         double _output_h = output_h_;
-        
+        double grid_ = calculateGrid(area_dimension_, _output_h);
+
         init(wind_speed_horizontal_,
         wind_direction_,
         release_height_,
@@ -135,7 +131,10 @@ public class Data {
         output_h_,
         area_dimension_,
         grid_ );
+    }
 
+    public Data(double wind_speed_horizontal, double wind_direction, double release_height, double source_strength, double refflection_co, int stability_class_num, double z0, double a, double b, double p, double q, double lon, double lat) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
     private void init(
@@ -153,7 +152,9 @@ public class Data {
     double lon_,
     double lat_,
     double output_h_,
-    double ... optional) throws IOException {
+    double area_dimension_,
+    double grid_ 
+    ) throws IOException {
         this.wind_speed_horizontal = wind_speed_horizontal_;
         this.wind_direction = wind_direction_;
         this.release_height = release_height_;
@@ -168,9 +169,6 @@ public class Data {
         this.lon = lon_;
         this.lat = lat_;
         this.output_height = output_h_;
-
-        double area_dimension_ = optional.length > 0 ? optional[0] : DEFAULT_AREA_DIMENSION;
-        double grid_ = optional.length > 1 ? optional[1] : DEFAULT_GRID;
 
         this.area_dimension = area_dimension_;
         this.grid = grid_;
@@ -236,6 +234,16 @@ public class Data {
     public JSONObject getResult() {
         JSONObject returnObject = new JSONObject();
         returnObject.put("result", sortedResult);
+        returnObject.put("max_value", max_value);
+        returnObject.put("unit", "µg");
+        returnObject.put("grid", grid);
+
+        return returnObject;
+    }
+    
+    public JSONObject getSortedResult() {
+        JSONObject returnObject = new JSONObject();
+        returnObject.put("result", result);
         returnObject.put("max_value", max_value);
         returnObject.put("unit", "µg");
         return returnObject;
@@ -423,7 +431,7 @@ public class Data {
     }
     
     public void calculate(DIMENSION dim) throws IOException{
-            calculateGauss(dim);
+        calculateGauss(dim);
     }
         
         /**
@@ -436,7 +444,7 @@ public class Data {
      * @return The name of the PTX file
      * @throws IOException If an I/O error occurs
      */
-    private static String preparePtxFile(String cuFileName) throws IOException
+    public static String preparePtxFile(String cuFileName) throws IOException
     {
         int endIndex = cuFileName.lastIndexOf('.');
         if (endIndex == -1)
@@ -564,18 +572,6 @@ public class Data {
             }
         }
         
-        if(result[0] > 0){
-            result[0] -= 1000;
-        }
-        else
-            result[0] += 1000;
-        
-        if(result[1] > 0){
-            result[1] -= 1000;
-        }
-        else
-            result[1] += 1000;
-        
         return result;
     }
       /**
@@ -614,8 +610,7 @@ public class Data {
         CUfunction function = new CUfunction();
         cuModuleGetFunction(function, module, "gauss");
 
-        int numElements = N*N*N/2;
-
+        int numElements = MAX_NUMBER_OF_POINTS;
 
         // Allocate device output memory
         CUdeviceptr deviceOutput = new CUdeviceptr();
@@ -821,9 +816,11 @@ public class Data {
         sortedResult = createRanges(result, max_value);
 
         // retrieve image
-        File outputfile = new File(RESULT_PATH+sdf.format(cal.getTime())+".bmp");
-        ImageIO.write(img, "png", outputfile);
-
+        if(SAVE_RESULT_IMAGE){
+            File outputfile = new File(RESULT_PATH+sdf.format(cal.getTime())+".bmp");
+            ImageIO.write(img, "png", outputfile);
+        }
+        
         writer.flush();
         writer.close();
         writer2.flush();
@@ -953,6 +950,22 @@ public class Data {
         }
 
         return resultWithRanges;
+    }
+
+    public static double calculateGrid(double area_dimension, double output_h) {
+        
+        double cloudHeight = 1;
+        
+        if(output_h == NO_OUTPUT_HEIGHT)
+            cloudHeight = DEFAULT_AREA_HEIGHT;
+        
+        double Volume = area_dimension*area_dimension*cloudHeight;
+        double pointVolume = Volume/MAX_NUMBER_OF_POINTS;
+        
+        
+        double grid = Math.pow((pointVolume*area_dimension)/cloudHeight, 1.0/3.0);
+        
+        return Math.round(grid);
     }
 
 

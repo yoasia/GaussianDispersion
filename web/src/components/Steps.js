@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
+import InputLabel from '@material-ui/core/InputLabel';
+import Select from '@material-ui/core/Select';
 import Stepper from '@material-ui/core/Stepper';
 import Step from '@material-ui/core/Step';
 import StepLabel from '@material-ui/core/StepLabel';
@@ -19,110 +21,15 @@ import Radio from '@material-ui/core/Radio';
 import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControl from '@material-ui/core/FormControl';
 import {figureEnum, DEFAULT_ALPHA} from '../constants/visualization';
+import {WEATHER_STABILITY} from '../constants/weather';
+import {NO_VALUE} from '../constants/constants';
 
+import {styles, sliderStyle, wrapperStyle, buttonFigureStyle} from '../styles/Steps-styles';
 import 'rc-slider/assets/index.css';
 import 'rc-tooltip/assets/bootstrap.css';
-import Legend from './Legend';
 
 const Handle = Slider.Handle;
 var emitter;
-
-const weatherStability=[
-    {
-        value: 1,
-        label: 'Very unstable',
-    },
-    {
-        value: 2,
-        label: 'Moderately unstable',
-    },
-    {
-        value: 3,
-        label: 'Slightly unstable',
-    },
-    {
-        value: 4,
-        label: 'Neutral',
-    },
-    {
-        value: 5,
-        label: 'Moderately stable',
-    },
-    {
-        value: 6,
-        label: 'Very stable',
-    }
-]
-
-const sliderStyle = { 
-  width: 200, 
-  height: 200,
-  margin: "auto",
-  marginTop: "1em",
-  marginBottom: "1em",
-  paddingBottom: 60
-};
-const wrapperStyle = { 
-  width: 200, 
-  margin: "auto",
-  marginTop: "1em",
-  marginBottom: "1em"
-};
-const buttonFigureStyle = { 
-  margin: '2em auto',
-  display: 'flex',
-  justifyContent: 'center',
-};
-
-const styles = theme => ({
-  root: {
-    position: 'absolute',
-    zIndex: '2',
-    backgroundColor: 'white',
-    width: '20%',
-    height: '55%', 
-    padding:'10px'
-  },
-  container: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginBottom: '4em'
-  },
-  buttonContainer:{
-    bottom: '0px',
-    position:'absolute',
-    margin: theme.spacing.unit* 4
-  },
-  button: {
-    marginRight: theme.spacing.unit,
-  },
-  buttonFigure:{
-    marginRight: theme.spacing.unit,
-    width: '10em'
-  },
-  instructions: {
-    marginTop: theme.spacing.unit,
-    marginBottom: theme.spacing.unit,
-  },
-  textField: {
-    marginLeft: theme.spacing.unit,
-    marginRight: theme.spacing.unit,
-    width: 200,
-  },
-  loader:{
-    flexGrow:1,
-  },
-  leftIcon: {
-    marginRight: theme.spacing.unit,
-  },
-  rightIcon: {
-    marginLeft: theme.spacing.unit,
-  },
-  iconSmall: {
-    fontSize: 20,
-  },
-});
 
 function getSteps() {
   return ['Gas source', 'Weather', 'Other parametrs'];
@@ -135,12 +42,11 @@ function emitEventDraggableMarker(step){
     else{
         emitter.emit("draggableMarker", false);
     }
-  }
+}
+
 function emitEventReset(step){
     emitter.emit("reset");
-  }
-
-
+}
 
 class Steps extends React.Component {
 
@@ -161,7 +67,8 @@ class Steps extends React.Component {
                 refflectionCo:1,
                 weatherStabilityClass:1,
                 areaDimension:null,
-                grid:50
+                calculationArea:1000,
+                outputH: 100
             },
             displayParameters:{
               min_value:0,
@@ -184,7 +91,6 @@ class Steps extends React.Component {
         this.handleChangeDisplay = this.handleChangeDisplay.bind(this);
         this.onFinish = this.onFinish.bind(this);
         this.onDownloadGeoJSON = this.onDownloadGeoJSON.bind(this);
-
     }
 
     
@@ -235,9 +141,9 @@ class Steps extends React.Component {
         if(!isNaN(this.textFieldValues[name])){
 
             var parameters = this.state.parameters;
-            parameters[name] = event.target.value;
+            parameters[name] = event.target.value == "" ? NO_VALUE : event.target.value;
 
-            if(name == "lon" || name == "lat" || name == "height"){
+            if((name == "lon" || name == "lat" || name == "height") && event.target.value){
                 parameters[name] = parseFloat(event.target.value);
                 emitter.emit("lonLatChanged", parameters.lon, parameters.lat, parameters.height);
             } else if( name == 'windDirection'){
@@ -369,7 +275,7 @@ class Steps extends React.Component {
                 helperText="Select weather stability"
                 margin="normal"
                 >
-                {weatherStability.map(option => (
+                {WEATHER_STABILITY.map(option => (
                     <MenuItem key={option.value} value={option.value}>
                     {option.label}
                     </MenuItem>
@@ -380,23 +286,55 @@ class Steps extends React.Component {
       case 2:
         return (
             <form className={classes.container} noValidate autoComplete="off">
-                <TextField
-                id="gridTextField"
-                label="Grid"
-                value={this.textFieldValues.grid}
-                className={classes.textField}
-                type="number"
-                onChange={this.handleChange('grid')}
-                margin="normal"
-                error={(isNaN(this.textFieldValues.grid)? true:false )}
-                InputLabelProps={{
-                    shrink: true,
-                    inputProps: { min: 5, max: 200 }
-                }}
-                InputProps={{
-                    endAdornment: <InputAdornment position="end">m</InputAdornment>,
-                }}
-                />
+                <FormControl className={classes.formControl}>
+                    <InputLabel htmlFor="output-height">Calculation area</InputLabel>
+                    <Select
+                    id="calculationAreaTextField"
+                    label="Calculation area dimension"
+                    value={this.textFieldValues.calculationArea}
+                    className={classes.selectField}
+                    onChange={this.handleChange('calculationArea')}
+                    margin="normal"
+                    inputProps={{
+                      name: 'Calculation area height',
+                      id: 'calculation-area',
+                    }}
+                    >
+                      <MenuItem value={500}>
+                        0.5km
+                      </MenuItem>
+                      <MenuItem value={1000} selected>1km</MenuItem>
+                      <MenuItem value={2000}>2km</MenuItem>
+                      <MenuItem value={3000}>3km</MenuItem>
+                      <MenuItem value={5000}>5km</MenuItem>
+                      <MenuItem value={7000}>7km</MenuItem>
+                      <MenuItem value={10000}>10km</MenuItem>
+                    </Select>
+                </FormControl>
+
+                  <FormControl className={classes.formControl}>
+                    <InputLabel htmlFor="output-height">Calculation area height</InputLabel>
+                    <Select
+                    className={classes.selectField}
+                    value={this.textFieldValues.outputH}
+                    onChange={this.handleChange('outputH')}
+                    label="Calculation area height"
+                    margin="normal"
+                    inputProps={{
+                      name: 'Calculation area height',
+                      id: 'output-height',
+                    }}
+                    >
+                        <MenuItem value={0}>
+                          <em>On the ground</em>
+                        </MenuItem>
+                        <MenuItem value={100} selected>100m</MenuItem>
+                        <MenuItem value={500}>0.5km</MenuItem>
+                        <MenuItem value={1000}>1km</MenuItem>
+                        <MenuItem value={2000}>2km</MenuItem>
+                        <MenuItem value={5000}>5km</MenuItem>
+                    </Select>
+                  </FormControl>
                 </form>
         );
       default:

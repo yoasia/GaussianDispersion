@@ -6,7 +6,6 @@
 
 import calculation.DIMENSION;
 import calculation.Data;
-import calculation.JCudaGauss;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -29,7 +28,6 @@ import org.json.simple.JSONArray;
  */
 @WebServlet(urlPatterns = {"/gaussDemo2d"})
 public class gaussDemo2d extends HttpServlet {
-    private JCudaGauss gaussObject;
     private static Data dataObject;
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>

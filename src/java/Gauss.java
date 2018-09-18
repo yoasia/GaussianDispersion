@@ -4,7 +4,6 @@
  * and open the template in the editor.
  */
 
-import constants.Configuration;
 import calculation.DIMENSION;
 import calculation.Data;
 import java.io.IOException;
@@ -14,10 +13,8 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import static constants.Configuration.DEFAULT_AREA_DIMENSION;
-import static constants.Configuration.DEFAULT_GRID;
+import static constants.Configuration.MAX_AREA_DIMENSION;
 import static constants.Configuration.NO_OUTPUT_HEIGHT;
 
 /**
@@ -55,7 +52,6 @@ public class Gauss extends HttpServlet {
         String s_b = request.getParameter("b");
         String s_p = request.getParameter("p");
         String s_q = request.getParameter("q");
-        String s_grid = request.getParameter("grid");
         String s_dimension = request.getParameter("dimension");
         String s_lon = request.getParameter("lon");
         String s_lat = request.getParameter("lat");
@@ -84,7 +80,6 @@ public class Gauss extends HttpServlet {
                 json.put("source_strength",s_source_strength);
                 json.put("refflection_co",s_refflection_co);
                 json.put("stability_class_num",s_stability_class_num);
-                json.put("grid",s_grid);
                 json.put("dimension",s_dimension);
                 json.put("s_lon",s_lon);
                 json.put("s_lat",s_lat);
@@ -118,10 +113,7 @@ public class Gauss extends HttpServlet {
         boolean _3d = (s_3d == null ? false: true);
         double _output_h = (s_output_h == null ? NO_OUTPUT_HEIGHT : Double.parseDouble(s_output_h));
         
-        double dimension = (s_dimension == null) ? DEFAULT_AREA_DIMENSION: Double.parseDouble(s_dimension);
-        double grid = (s_grid == null) ? DEFAULT_GRID: Double.parseDouble(s_grid);
-        
-
+        double dimension = (s_dimension == null) ? MAX_AREA_DIMENSION: Double.parseDouble(s_dimension);
 
         data = new Data(wind_speed_horizontal, 
             wind_direction, 
@@ -136,9 +128,9 @@ public class Gauss extends HttpServlet {
             q,
             lon, 
             lat,
-            dimension,
-            grid, 
-            _output_h);
+            _output_h,
+            dimension
+            );
         
         if(_2d == true)
             data.calculate(DIMENSION.TWO);

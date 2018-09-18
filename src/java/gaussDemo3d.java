@@ -6,7 +6,6 @@
 
 import calculation.DIMENSION;
 import calculation.Data;
-import calculation.JCudaGauss;
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.json.JsonObject;
@@ -24,7 +23,6 @@ import org.json.simple.JSONObject;
  */
 @WebServlet(urlPatterns = {"/gaussDemo3d"})
 public class gaussDemo3d extends HttpServlet {
-    private JCudaGauss gaussObject;
     private static Data dataObject;
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>

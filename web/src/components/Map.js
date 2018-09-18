@@ -2,9 +2,9 @@ import React from 'react';
 import {  Cartesian3, BoundingSphere, Cartesian2 } from "cesium/Cesium";
 import Cesium from 'cesium';
  
-import { Viewer, Entity, Camera, CameraFlyToBoundingSphere } from "cesium-react";
+import { Viewer, Entity, Camera, CameraFlyTo } from "cesium-react";
 import Visualizer from './Visualizer';
-import { figureEnum } from '../constants/visualization';
+import { BBOX_WIDTH } from '../constants/visualization';
 
 class Map extends React.Component {
 
@@ -94,21 +94,19 @@ class Map extends React.Component {
     render() {
         const markerPosition =  Cartesian3.fromDegrees(this.state.marker.lon, this.state.marker.lat, this.state.marker.height);
         const boundingSphere = new BoundingSphere( markerPosition, 2000);
+        var rectangle = Cesium.Rectangle.fromDegrees(this.state.marker.lon - BBOX_WIDTH, this.state.marker.lat -  BBOX_WIDTH, this.state.marker.lon +  BBOX_WIDTH, this.state.marker.lat + BBOX_WIDTH);
         const sourcePoint = new Cesium.Cartesian3(20, 20, 20);
         const color = new Cesium.Color(0.5, 0.25, 0.5, 1);
         var cameraAnimation = null;
-        
+        var easingF = Cesium.EasingFunction.CUBIC_IN_OUT;
+
         if(this.animateCamera)
             cameraAnimation = (
                 <div>
-                    <Camera
-                        view={{
-                            destination: markerPosition,
-                        }}
-                        />
-                    <CameraFlyToBoundingSphere
-                        boundingSphere={boundingSphere}
-                        duration={1}
+                    <CameraFlyTo
+                    destination={rectangle}
+                    duration={1}
+                    easingFunction={easingF}
                     />
                 </div>
             )
@@ -118,8 +116,6 @@ class Map extends React.Component {
                 this.viewer = e ? e.cesiumElement : null;
               }}>
                 <Visualizer emitter={this.emitter} data={this.state.data} />
-                
-                //Source point
                 <Entity
                 name = {'Source point'}
                 label={{

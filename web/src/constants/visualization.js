@@ -1,8 +1,10 @@
 
 import getColorFromGradient from 'gpotter-gradient';
 
-export const figureEnum = Object.freeze({"CUBE":1, "SPHERE":2});
+export const BBOX_WIDTH = 0.02; //in deg
 export const DEFAULT_ALPHA = 1;
+export const figureEnum = Object.freeze({"CUBE":1, "SPHERE":2});
+
 export const gradient = {
     0: '#FF284F',
     25: '#E8882C',
@@ -11,7 +13,7 @@ export const gradient = {
     100: '#5DFCFF'
   };
 
-  export function valueToColor(value, max_value){
+export function valueToColor(value, max_value){
     const color = getColorFromGradient(gradient, (value/max_value) * 100); // #882737
     
     var r, g, b;

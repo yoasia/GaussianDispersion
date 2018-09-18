@@ -33,10 +33,14 @@ class Visualizer extends Component {
             this.setState({pointShape:this.props.pointShape});
         }
         if (this.props.data !== prevProps.data) {
-            this.setState({data:this.props.data,             
-                currentLayer:Object.keys(this.props.data.result).length - 1
-            });
-            
+            if(this.props.data)
+                this.setState({data:this.props.data,             
+                    currentLayer:Object.keys(this.props.data.result).length - 1
+                });
+            else
+                this.setState({data:this.props.data,             
+                    currentLayer:null
+                });
         }
     }
 
@@ -75,12 +79,13 @@ class Visualizer extends Component {
         var color = null;
         var boxes = [];
         const self = this;
+        var grid;
 
         if(this.state.data){
-
+            grid = this.state.data.grid;
             for (let i = 0; i <= Object.keys(self.state.data.result).length - 1 - this.state.currentLayer; i++) {
                 this.state.data.result['range'+i].forEach((element, index) => {
-                    cube = new Cesium.Cartesian3(50,50,50);
+                    cube = new Cesium.Cartesian3(grid, grid, grid);
                     sphere = new Cesium.Cartesian3(25,25,25);
                     cubePosition =  Cartesian3.fromDegrees(element.lon, element.lat, element.z);
                     const rgbColor = valueToColor(i*(self.state.data.max_value/Object.keys(self.state.data.result).length), self.state.data.max_value);

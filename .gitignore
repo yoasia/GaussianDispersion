@@ -20,11 +20,11 @@
 *.rar
 
 
-/web/node_modules/
-/web/cesium/
-/results/
+node_modules/
+web/cesium/
+results/
 
-/web/dst/
-/dist/
-/build/
+dist/
+build/*
 .vscode
+web/.vscode

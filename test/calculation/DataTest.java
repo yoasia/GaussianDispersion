@@ -5,9 +5,9 @@
  */
 package calculation;
 
-import static calculation.Data.calculateGrid;
-import static calculation.Data.preparePtxFile;
-import static constants.Configuration.MAX_AREA_DIMENSION;
+import constants.DIMENSION;
+import static calculation.GaussianModel.calculateGrid;
+import static calculation.GaussianModel.preparePtxFile;
 import static constants.Configuration.MAX_AREA_DIMENSION;
 import static constants.Configuration.NO_OUTPUT_HEIGHT;
 import static constants.Configuration.RESULT_PATH;
@@ -67,7 +67,7 @@ public class DataTest {
         JCudaDriver.setExceptionsEnabled(true);
 
         // Create the PTX file by calling the NVCC
-        String absolutePath = Data.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        String absolutePath = GaussianModel.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         String ptxFileName =  preparePtxFile(absolutePath+"cuda/kernels/JCudaGaussKernel.cu");
         System.out.println("Test Passed!");
         
@@ -97,7 +97,7 @@ public class DataTest {
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("DD-MM_HH-mm");
         DIMENSION dim = DIMENSION.THREE;
-        Data instance;
+        GaussianModel instance;
         
         System.out.println("calculateGauss");
 
@@ -120,7 +120,7 @@ public class DataTest {
                     "\nsource strength (Q): " + source_strength + 
                     "\nstability class:" + String.valueOf(stability_class_num) );
 
-            instance = new Data(
+            instance = new GaussianModel(
                 wind_speed_horizontal, 
                 wind_direction, 
                 release_height,
@@ -277,22 +277,22 @@ public class DataTest {
         expResult15[1] = max * Math.tan(30 * Math.PI/180);
         
         
-        double[] result = Data.calculateTranslation(angle, area_dimension);
-        double[] result1 = Data.calculateTranslation(angle1, area_dimension);
-        double[] result2 = Data.calculateTranslation(angle2, area_dimension);
-        double[] result3 = Data.calculateTranslation(angle3, area_dimension);
-        double[] result4 = Data.calculateTranslation(angle4, area_dimension);
-        double[] result5 = Data.calculateTranslation(angle5, area_dimension);
-        double[] result6 = Data.calculateTranslation(angle6, area_dimension);
-        double[] result7 = Data.calculateTranslation(angle7, area_dimension);
-        double[] result8 = Data.calculateTranslation(angle8, area_dimension);
-        double[] result9 = Data.calculateTranslation(angle9, area_dimension);
-        double[] result10 = Data.calculateTranslation(angle10, area_dimension);
-        double[] result11 = Data.calculateTranslation(angle11, area_dimension);
-        double[] result12 = Data.calculateTranslation(angle12, area_dimension);
-        double[] result13 = Data.calculateTranslation(angle13, area_dimension);
-        double[] result14 = Data.calculateTranslation(angle14, area_dimension);
-        double[] result15 = Data.calculateTranslation(angle15, area_dimension);
+        double[] result = GaussianModel.calculateTranslation(angle, area_dimension);
+        double[] result1 = GaussianModel.calculateTranslation(angle1, area_dimension);
+        double[] result2 = GaussianModel.calculateTranslation(angle2, area_dimension);
+        double[] result3 = GaussianModel.calculateTranslation(angle3, area_dimension);
+        double[] result4 = GaussianModel.calculateTranslation(angle4, area_dimension);
+        double[] result5 = GaussianModel.calculateTranslation(angle5, area_dimension);
+        double[] result6 = GaussianModel.calculateTranslation(angle6, area_dimension);
+        double[] result7 = GaussianModel.calculateTranslation(angle7, area_dimension);
+        double[] result8 = GaussianModel.calculateTranslation(angle8, area_dimension);
+        double[] result9 = GaussianModel.calculateTranslation(angle9, area_dimension);
+        double[] result10 = GaussianModel.calculateTranslation(angle10, area_dimension);
+        double[] result11 = GaussianModel.calculateTranslation(angle11, area_dimension);
+        double[] result12 = GaussianModel.calculateTranslation(angle12, area_dimension);
+        double[] result13 = GaussianModel.calculateTranslation(angle13, area_dimension);
+        double[] result14 = GaussianModel.calculateTranslation(angle14, area_dimension);
+        double[] result15 = GaussianModel.calculateTranslation(angle15, area_dimension);
 
         System.out.println(angle);        
          junit.framework.Assert.assertEquals(round(expResult[0], 6), round( result[0], 6));

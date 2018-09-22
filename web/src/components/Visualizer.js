@@ -35,7 +35,7 @@ class Visualizer extends Component {
         if (this.props.data !== prevProps.data) {
             if(this.props.data)
                 this.setState({data:this.props.data,             
-                    currentLayer:Object.keys(this.props.data.result).length - 1
+                    currentLayer:0
                 });
             else
                 this.setState({data:this.props.data,             
@@ -81,7 +81,8 @@ class Visualizer extends Component {
         const self = this;
         var grid;
 
-        if(this.state.data){
+        if(false){
+        // if(this.state.data){
             grid = this.state.data.grid;
             for (let i = 0; i <= Object.keys(self.state.data.result).length - 1 - this.state.currentLayer; i++) {
                 this.state.data.result['range'+i].forEach((element, index) => {
@@ -97,7 +98,7 @@ class Visualizer extends Component {
 
                     if(self.state.pointShape == figureEnum.CUBE)
                         boxes.push((<Entity
-                            key={index}
+                            key={i+"_"+index}
                             name = {'Gas concentration'}
                             description={element.value}
                             position={cubePosition}
@@ -109,7 +110,7 @@ class Visualizer extends Component {
                             </Entity>))
                     else
                         boxes.push((<Entity
-                            key={index}
+                            key={+"_"+index}
                             name = {'Gas concentration'}
                             description={element.value}
                             position={cubePosition}

@@ -27,7 +27,8 @@ export const styles = theme => ({
     backgroundColor: 'white',
     width: 400,
     height: '55%',
-    padding: '10px'
+    padding: '10px',
+    margin: '0.5em'
   },
   container: {
     display: 'flex',

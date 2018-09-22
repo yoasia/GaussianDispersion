@@ -7,6 +7,7 @@ define([
         '../Core/clone',
         '../Core/Color',
         '../Core/combine',
+        '../Core/createGuid',
         '../Core/defaultValue',
         '../Core/defined',
         '../Core/defineProperties',
@@ -85,6 +86,7 @@ define([
         clone,
         Color,
         combine,
+        createGuid,
         defaultValue,
         defined,
         defineProperties,
@@ -221,7 +223,7 @@ define([
     };
 
     var gltfCache = {};
-
+    var uriToGuid = {};
     ///////////////////////////////////////////////////////////////////////////
 
     /**
@@ -1209,9 +1211,14 @@ define([
         var basePath = defaultValue(options.basePath, modelResource.clone());
         var resource = Resource.createIfNeeded(basePath);
 
-        // If no cache key is provided, use the absolute URL, since two URLs with
-        // different relative paths could point to the same model.
-        var cacheKey = defaultValue(options.cacheKey, getAbsoluteUri(modelResource.url));
+        // If no cache key is provided, use a GUID.
+        // Check using a URI to GUID dictionary that we have not already added this model.
+        var cacheKey = defaultValue(options.cacheKey, uriToGuid[getAbsoluteUri(modelResource.url)]);
+        if (!defined(cacheKey)) {
+            cacheKey = createGuid();
+            uriToGuid[getAbsoluteUri(modelResource.url)] = cacheKey;
+        }
+
         if (defined(options.basePath) && !defined(options.cacheKey)) {
             cacheKey += resource.url;
         }
@@ -1382,14 +1389,14 @@ define([
         }
 
         var boundingSphere = BoundingSphere.fromCornerPoints(min, max);
+        if (model._forwardAxis === Axis.Z) {
+            // glTF 2.0 has a Z-forward convention that must be adapted here to X-forward.
+            BoundingSphere.transformWithoutScale(boundingSphere, Axis.Z_UP_TO_X_UP, boundingSphere);
+        }
         if (model._upAxis === Axis.Y) {
             BoundingSphere.transformWithoutScale(boundingSphere, Axis.Y_UP_TO_Z_UP, boundingSphere);
         } else if (model._upAxis === Axis.X) {
             BoundingSphere.transformWithoutScale(boundingSphere, Axis.X_UP_TO_Z_UP, boundingSphere);
-        }
-        if (model._forwardAxis === Axis.Z) {
-            // glTF 2.0 has a Z-forward convention that must be adapted here to X-forward.
-            BoundingSphere.transformWithoutScale(boundingSphere, Axis.Z_UP_TO_X_UP, boundingSphere);
         }
         return boundingSphere;
     }
@@ -4281,7 +4288,7 @@ define([
                 }
 
                 if (!loadResources.finishedDecoding()) {
-                    DracoLoader.decode(this, context)
+                    DracoLoader.decodeModel(this, context)
                         .otherwise(getFailedLoadFunction(this, 'model', this.basePath));
                 }
 

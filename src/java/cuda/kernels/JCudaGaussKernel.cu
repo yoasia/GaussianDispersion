@@ -33,20 +33,14 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
 
 
     //calculate point coordinates in m
-    x = ix - (0.5*n)*grid;
-    y = iy - (0.5*n)*grid;
+    x = (ix - 0.5*n)*grid;
+    y = iy * grid;
     z = iz * grid;
 
-
-    x_tmp = x;
-    y_tmp = y;
-
     //point rotation
-    x = x_tmp*cos(-wind_dir*PI/180) - y_tmp*sin(-wind_dir*PI/180);
-    y = x_tmp*sin(-wind_dir*PI/180) + y_tmp*cos(-wind_dir*PI/180);
+    x = x * cos(-wind_dir * PI/180) - y * sin(-wind_dir * PI/180);
+    y = x * sin(-wind_dir * PI/180) + y * cos(-wind_dir * PI/180);
 
-    x_tmp = x;
-    y_tmp = y;
     max = (n * grid)/2;
 
     //point translation

@@ -4,8 +4,8 @@
  * and open the template in the editor.
  */
 
-import calculation.DIMENSION;
-import calculation.Data;
+import constants.DIMENSION;
+import calculation.GaussianModel;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -28,7 +28,7 @@ import org.json.simple.JSONArray;
  */
 @WebServlet(urlPatterns = {"/gaussDemo2d"})
 public class gaussDemo2d extends HttpServlet {
-    private static Data dataObject;
+    private static GaussianModel dataObject;
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -41,7 +41,7 @@ public class gaussDemo2d extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
-        dataObject = new Data();
+        dataObject = new GaussianModel();
         dataObject.calculate(DIMENSION.TWO);
         
         response.setContentType("application/json");
@@ -50,7 +50,7 @@ public class gaussDemo2d extends HttpServlet {
             /* TODO output your page here. You may use following sample code. */
 
             //create Json Object
-            JSONObject json = dataObject.getResult();
+            JSONObject json = dataObject.getRangedResult();
             out.flush();
             // finally output the json string       
             out.print(json);

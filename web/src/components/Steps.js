@@ -22,7 +22,7 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControl from '@material-ui/core/FormControl';
 import {figureEnum, DEFAULT_ALPHA} from '../constants/visualization';
 import {WEATHER_STABILITY} from '../constants/weather';
-import {NO_VALUE} from '../constants/constants';
+import {NO_VALUE, GAS, TIME} from '../constants/constants';
 
 import {styles, sliderStyle, wrapperStyle, buttonFigureStyle} from '../styles/Steps-styles';
 import 'rc-slider/assets/index.css';
@@ -32,7 +32,7 @@ const Handle = Slider.Handle;
 var emitter;
 
 function getSteps() {
-  return ['Gas source', 'Weather', 'Other parametrs'];
+  return ['Gas', "Source", 'Weather', 'Other parametrs'];
 }
 
 function emitEventDraggableMarker(step){
@@ -68,7 +68,10 @@ class Steps extends React.Component {
                 weatherStabilityClass:1,
                 areaDimension:null,
                 calculationArea:1000,
-                outputH: 100
+                outputH: 100,
+                gas_type:0,
+                time: 1
+
             },
             displayParameters:{
               min_value:0,
@@ -189,6 +192,77 @@ class Steps extends React.Component {
       case 0:
         return (
         <form className={classes.container} noValidate autoComplete="off">
+            <FormControl className={classes.formControl}>
+              <InputLabel htmlFor="gas-type">Gas type</InputLabel>
+                <Select
+                id="gasTypeSelect"
+                label="Gas type"
+                value={this.textFieldValues.gas_type}
+                className={classes.selectField}
+                onChange={this.handleChange('gas_type')}
+                margin="normal"
+                inputProps={{
+                  name: 'Gas type',
+                  id: 'gas-type',
+                }}
+                >
+                    {GAS.map((name, index) => (
+                    <MenuItem
+                      key={index}
+                      value={index}
+                      selected={
+                          (this.state.parameters.gas_type === index)
+                      }
+                    >
+                      {name}
+                    </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+            id="srcStrTextField"
+            label="Gas emmission"
+            type="number"
+            value={this.textFieldValues.sourceStrength}
+            onChange={this.handleChange('sourceStrength')}
+            className={classes.textField}
+            margin="normal"
+            error={(isNaN(this.textFieldValues.sourceStrength)? true:false )}
+            InputProps={{
+                endAdornment: <InputAdornment position="end">grams/seconds</InputAdornment>,
+            }}
+            />
+            <FormControl className={classes.formControl}>
+              <InputLabel htmlFor="gas-type">Release time</InputLabel>
+              <Select
+              id="timeTypeSelect"
+              label="Release time"
+              value={this.textFieldValues.gas_type}
+              className={classes.selectField}
+              onChange={this.handleChange('time')}
+              margin="normal"
+              inputProps={{
+                name: 'Release time',
+                id: 'time',
+              }}
+              >
+                  {TIME.map((name, index) => (
+                  <MenuItem
+                    key={index}
+                    value={index}
+                    selected={
+                        (this.state.parameters.time === index)
+                    }
+                  >
+                    {name} h
+                  </MenuItem>
+              ))}
+            </Select>
+            </FormControl>
+        </form>);
+      case 1:
+        return (
+        <form className={classes.container} noValidate autoComplete="off">
             <TextField
             id="lonTextField"
             label="Longitude"
@@ -209,6 +283,7 @@ class Steps extends React.Component {
             />
             <TextField
             id="heightTextField"
+            type="number"
             label="Height of the source"
             value={this.textFieldValues.height}
             onChange={this.handleChange('height')}
@@ -219,20 +294,8 @@ class Steps extends React.Component {
                 endAdornment: <InputAdornment position="end">m</InputAdornment>,
             }}
             />
-            <TextField
-            id="srcStrTextField"
-            label="Gas emmission"
-            value={this.textFieldValues.sourceStrength}
-            onChange={this.handleChange('sourceStrength')}
-            className={classes.textField}
-            margin="normal"
-            error={(isNaN(this.textFieldValues.sourceStrength)? true:false )}
-            InputProps={{
-                endAdornment: <InputAdornment position="end">grams/seconds</InputAdornment>,
-            }}
-            />
         </form>);
-      case 1:
+      case 2:
         return (
             <form className={classes.container} noValidate autoComplete="off">
                 <TextField
@@ -250,6 +313,7 @@ class Steps extends React.Component {
                 <TextField
                 id="directionTextField"
                 label="Wind direction"
+                type="number"
                 helperText="to North = 0 degree "
                 value={this.textFieldValues.windDirection}
                 onChange={this.handleChange('windDirection')}
@@ -283,7 +347,7 @@ class Steps extends React.Component {
                 </TextField>
                 
             </form>);
-      case 2:
+      case 3:
         return (
             <form className={classes.container} noValidate autoComplete="off">
                 <FormControl className={classes.formControl}>
@@ -470,7 +534,7 @@ class Steps extends React.Component {
                         step={1}
                         max={this.state.rangesNumber-1}
                         marks={marks}
-                        defaultValue={this.state.rangesNumber-1} 
+                        defaultValue={0} 
                         onAfterChange={this.handleChangeDisplay('layers')} 
                         minimumTrackStyle={{
                           backgroundColor:"rgba(255, 255, 255, 0.9)",

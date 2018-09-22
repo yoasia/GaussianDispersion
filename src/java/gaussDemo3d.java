@@ -4,8 +4,8 @@
  * and open the template in the editor.
  */
 
-import calculation.DIMENSION;
-import calculation.Data;
+import constants.DIMENSION;
+import calculation.GaussianModel;
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.json.JsonObject;
@@ -23,7 +23,7 @@ import org.json.simple.JSONObject;
  */
 @WebServlet(urlPatterns = {"/gaussDemo3d"})
 public class gaussDemo3d extends HttpServlet {
-    private static Data dataObject;
+    private static GaussianModel dataObject;
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -37,7 +37,7 @@ public class gaussDemo3d extends HttpServlet {
             throws ServletException, IOException {
         
         
-        dataObject = new Data();
+        dataObject = new GaussianModel();
         dataObject.calculate(DIMENSION.THREE);
         
         response.setContentType("application/json");
@@ -46,7 +46,7 @@ public class gaussDemo3d extends HttpServlet {
             /* TODO output your page here. You may use following sample code. */
 
             //create Json Object
-            JSONObject json = dataObject.getResult();
+            JSONObject json = dataObject.getRangedResult();
             String str = json.toString();
             out.flush();
             // finally output the json string       

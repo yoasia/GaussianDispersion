@@ -19120,8 +19120,7 @@ var App = function (_React$Component) {
         var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
 
         _this.state = {
-            parameters: null,
-            callbackGetData: null
+            parameters: null
         };
 
         _this.emitter = new _eventEmitter2.default();
@@ -40799,21 +40798,21 @@ var Data = function (_React$Component) {
                     wind_speed: this.props.parameters.windSpeed,
                     wind_angle: this.props.parameters.windDirection,
                     h: this.props.parameters.height,
-                    src_str: this.props.parameters.sourceStrength,
+                    src_str: this.props.parameters.sourceStrength * 3600 * this.props.parameters.time,
                     reffl: this.props.parameters.refflectionCo,
                     stb_class: this.props.parameters.weatherStabilityClass,
                     grid: this.props.parameters.grid,
                     lon: this.props.parameters.lon,
                     lat: this.props.parameters.lat,
-                    output_h: this.props.parameters.outputH,
+                    dimension_h: this.props.parameters.outputH,
                     dimension: this.props.parameters.calculationArea,
-                    _3d: true
+                    gas: this.props.parameters.gas
                 }
             }).then(function (response) {
                 console.log(response);
                 self.calculateCenterLine(self.props.parameters.windDirection);
                 self.setState({ downloaded: true, data: response.data });
-                self.emitter.emit("dataDownloaded", response.data.max_value, Object.keys(response.data.result).length);
+                self.emitter.emit("dataDownloaded", response.data);
             }).catch(function (error) {
                 console.log(error);
                 self.emitter.emit("dataDownloaded", false);
@@ -55346,6 +55345,7 @@ var Steps = function (_React$Component) {
       activeStep: 0,
       skipped: new Set(),
       downloaded: false,
+      errorOnDownload: false,
       parameters: {
         lon: 20,
         lat: 52,
@@ -55353,14 +55353,12 @@ var Steps = function (_React$Component) {
         windDirection: 30,
         height: 2,
         sourceStrength: 5,
-        refflectionCo: 1,
         weatherStabilityClass: 1,
         areaDimension: null,
         calculationArea: 1000,
         outputH: 100,
-        gas_type: 0,
+        gas: "CO",
         time: 1
-
       },
       displayParameters: {
         min_value: 0,
@@ -55370,7 +55368,7 @@ var Steps = function (_React$Component) {
       },
       rangesNumber: null,
       maxValue: null,
-      checkedA: true
+      ranges: null
     };
     _this.textFieldValues = Object.assign({}, _this.state.parameters);
     _this.displayFormValues = Object.assign({}, _this.state.displayParameters);
@@ -55396,8 +55394,13 @@ var Steps = function (_React$Component) {
     value: function onFinish() {
       var self = this;
       this.props.onFinish(this.state.parameters);
-      emitter.on('dataDownloaded', function (maxValue, rangesNumber) {
-        self.setState({ downloaded: true, maxValue: maxValue, rangesNumber: rangesNumber });
+      emitter.on('dataDownloaded', function (response) {
+        if (response) {
+          var maxValue = response.data.max_value;
+          var rangesNumber = Object.keys(response.data.result).length;
+          var ranges = response.ranges;
+          self.setState({ downloaded: true, maxValue: maxValue, rangesNumber: rangesNumber, ranges: ranges, data: response });
+        } else self.setState({ downloaded: true, errorOnDownload: true });
       });
     }
   }, {
@@ -55459,10 +55462,9 @@ var Steps = function (_React$Component) {
                 {
                   id: 'gasTypeSelect',
                   label: 'Gas type',
-                  value: this.textFieldValues.gas_type,
+                  value: this.textFieldValues.gas,
                   className: classes.selectField,
-                  onChange: this.handleChange('gas_type'),
-                  margin: 'normal',
+                  onChange: this.handleChange('gas'),
                   inputProps: {
                     name: 'Gas type',
                     id: 'gas-type'
@@ -55473,8 +55475,8 @@ var Steps = function (_React$Component) {
                     _MenuItem2.default,
                     {
                       key: index,
-                      value: index,
-                      selected: _this2.state.parameters.gas_type === index
+                      value: name,
+                      selected: _this2.state.parameters.gas === name
                     },
                     name
                   );
@@ -55488,7 +55490,6 @@ var Steps = function (_React$Component) {
               value: this.textFieldValues.sourceStrength,
               onChange: this.handleChange('sourceStrength'),
               className: classes.textField,
-              margin: 'normal',
               error: isNaN(this.textFieldValues.sourceStrength) ? true : false,
               InputProps: {
                 endAdornment: _react2.default.createElement(
@@ -55496,7 +55497,8 @@ var Steps = function (_React$Component) {
                   { position: 'end' },
                   'grams/seconds'
                 )
-              }
+              },
+              margin: 'normal'
             }),
             _react2.default.createElement(
               _FormControl2.default,
@@ -55511,10 +55513,9 @@ var Steps = function (_React$Component) {
                 {
                   id: 'timeTypeSelect',
                   label: 'Release time',
-                  value: this.textFieldValues.gas_type,
+                  value: this.textFieldValues.gas,
                   className: classes.selectField,
                   onChange: this.handleChange('time'),
-                  margin: 'normal',
                   inputProps: {
                     name: 'Release time',
                     id: 'time'
@@ -55525,8 +55526,8 @@ var Steps = function (_React$Component) {
                     _MenuItem2.default,
                     {
                       key: index,
-                      value: index,
-                      selected: _this2.state.parameters.time === index
+                      value: name,
+                      selected: _this2.state.parameters.time === name
                     },
                     name,
                     ' h'
@@ -55545,8 +55546,8 @@ var Steps = function (_React$Component) {
               value: this.textFieldValues.lon,
               className: classes.textField,
               onChange: this.handleChange('lon'),
-              margin: 'normal',
-              error: isNaN(this.textFieldValues.lon) ? true : false
+              error: isNaN(this.textFieldValues.lon) ? true : false,
+              margin: 'normal'
             }),
             _react2.default.createElement(_TextField2.default, {
               id: 'latTextField',
@@ -55554,8 +55555,8 @@ var Steps = function (_React$Component) {
               value: this.textFieldValues.lat,
               onChange: this.handleChange('lat'),
               className: classes.textField,
-              margin: 'normal',
-              error: isNaN(this.textFieldValues.lat) ? true : false
+              error: isNaN(this.textFieldValues.lat) ? true : false,
+              margin: 'normal'
             }),
             _react2.default.createElement(_TextField2.default, {
               id: 'heightTextField',
@@ -55564,7 +55565,6 @@ var Steps = function (_React$Component) {
               value: this.textFieldValues.height,
               onChange: this.handleChange('height'),
               className: classes.textField,
-              margin: 'normal',
               error: isNaN(this.textFieldValues.height) ? true : false,
               InputProps: {
                 endAdornment: _react2.default.createElement(
@@ -55572,7 +55572,8 @@ var Steps = function (_React$Component) {
                   { position: 'end' },
                   'm'
                 )
-              }
+              },
+              margin: 'normal'
             })
           );
         case 2:
@@ -55585,7 +55586,6 @@ var Steps = function (_React$Component) {
               value: this.textFieldValues.windSpeed,
               className: classes.textField,
               onChange: this.handleChange('windSpeed'),
-              margin: 'normal',
               error: isNaN(this.textFieldValues.windSpeed) ? true : false,
               InputProps: {
                 endAdornment: _react2.default.createElement(
@@ -55593,7 +55593,8 @@ var Steps = function (_React$Component) {
                   { position: 'end' },
                   'm/s'
                 )
-              }
+              },
+              margin: 'normal'
             }),
             _react2.default.createElement(_TextField2.default, {
               id: 'directionTextField',
@@ -55603,7 +55604,6 @@ var Steps = function (_React$Component) {
               value: this.textFieldValues.windDirection,
               onChange: this.handleChange('windDirection'),
               className: classes.textField,
-              margin: 'normal',
               error: isNaN(this.textFieldValues.windDirection) ? true : false,
               InputProps: {
                 endAdornment: _react2.default.createElement(
@@ -55611,7 +55611,8 @@ var Steps = function (_React$Component) {
                   { position: 'end' },
                   'degrees'
                 )
-              }
+              },
+              margin: 'normal'
             }),
             _react2.default.createElement(
               _TextField2.default,
@@ -55627,8 +55628,8 @@ var Steps = function (_React$Component) {
                     className: classes.menu
                   }
                 },
-                helperText: 'Select weather stability',
-                margin: 'normal'
+                margin: 'normal',
+                helperText: 'Select weather stability'
               },
               _weather.WEATHER_STABILITY.map(function (option) {
                 return _react2.default.createElement(
@@ -55659,7 +55660,6 @@ var Steps = function (_React$Component) {
                   value: this.textFieldValues.calculationArea,
                   className: classes.selectField,
                   onChange: this.handleChange('calculationArea'),
-                  margin: 'normal',
                   inputProps: {
                     name: 'Calculation area height',
                     id: 'calculation-area'
@@ -55717,7 +55717,6 @@ var Steps = function (_React$Component) {
                   value: this.textFieldValues.outputH,
                   onChange: this.handleChange('outputH'),
                   label: 'Calculation area height',
-                  margin: 'normal',
                   inputProps: {
                     name: 'Calculation area height',
                     id: 'output-height'
@@ -55781,13 +55780,23 @@ var Steps = function (_React$Component) {
       var activeStep = this.state.activeStep;
 
       var rangeValue = this.state.maxValue / this.state.rangesNumber;
-      var marks = {
-        0: ' 0 - 1 [µg]',
-        1: '1 - ' + Math.round(rangeValue) + ' [µg]'
-      };
 
-      for (var index = 2; index < this.state.rangesNumber; index++) {
-        marks[index] = index * Math.round(rangeValue) + ' - ' + (1 + index) * Math.round(rangeValue) + ' [µg]';
+      if (this.state.parameters.gas == "other") {
+
+        var marks = {
+          0: ' 0 - 1 [µg]',
+          1: '1 - ' + Math.round(rangeValue) + ' [µg]'
+        };
+
+        for (var index = 2; index < this.state.rangesNumber; index++) {
+          marks[index] = index * Math.round(rangeValue) + ' - ' + (1 + index) * Math.round(rangeValue) + ' [µg]';
+        }
+      } else {
+        var marks = {};
+
+        for (var _index = 1; _index < this.state.rangesNumber; _index++) {
+          marks[_index - 1] = GAS_CONCENTRATION_KEY[_index - 1] + range[_index - 1] * 1000 + ' - ' + range[_index] * 1000 + ' [mg]';
+        }
       }
 
       return _react2.default.createElement(
@@ -55832,7 +55841,7 @@ var Steps = function (_React$Component) {
               _react2.default.createElement(
                 'div',
                 { className: classes.loader },
-                this.state.downloaded == true ? _react2.default.createElement(
+                this.state.downloaded && !this.state.errorOnDownload ? _react2.default.createElement(
                   'div',
                   { style: { marginBottom: "1em" } },
                   _react2.default.createElement(
@@ -55882,7 +55891,11 @@ var Steps = function (_React$Component) {
                       handleStyle: { border: "solid 2px #3f51b5" }
                     })
                   )
-                ) : _react2.default.createElement(_LinearProgress2.default, { color: 'secondary' })
+                ) : !this.state.errorOnDownload ? _react2.default.createElement(_LinearProgress2.default, { color: 'secondary' }) : _react2.default.createElement(
+                  _Typography2.default,
+                  null,
+                  'There were some problems. Contact Administrator or try again.'
+                )
               )
             ),
             _react2.default.createElement(
@@ -79058,7 +79071,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 var NO_VALUE = exports.NO_VALUE = "-1";
 
-var GAS = exports.GAS = ["CO", "SO2"];
+var GAS = exports.GAS = ["CO", "SO2", "other"];
 
 var GAS_CONCENTRATION = exports.GAS_CONCENTRATION = {
     "CO": {
@@ -79079,7 +79092,9 @@ var GAS_CONCENTRATION = exports.GAS_CONCENTRATION = {
     }
 };
 
-var TIME = exports.TIME = [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24];
+var GAS_CONCENTRATION_KEY = exports.GAS_CONCENTRATION_KEY = ["Good", "Standard", "Alert", "Warning", "Emergency", "Significant Harm"];
+
+var TIME = exports.TIME = [0.5, 1]; //h
 
 /***/ }),
 /* 1436 */

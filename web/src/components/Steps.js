@@ -57,6 +57,7 @@ class Steps extends React.Component {
             activeStep: 0,
             skipped: new Set(),
             downloaded:false,
+            errorOnDownload:false,
             parameters:{
                 lon:20, 
                 lat:52,
@@ -68,7 +69,7 @@ class Steps extends React.Component {
                 areaDimension:null,
                 calculationArea:1000,
                 outputH: 100,
-                gas_type:0,
+                gas:"CO",
                 time: 1
             },
             displayParameters:{
@@ -77,8 +78,9 @@ class Steps extends React.Component {
               transparency: DEFAULT_ALPHA,
               layers:0
             },
-            rangesNumber:null,
+            rangesNumber: null,
             maxValue: null,
+            ranges: null
           };
         this.textFieldValues = Object.assign({}, this.state.parameters);
         this.displayFormValues = Object.assign({}, this.state.displayParameters);
@@ -107,8 +109,15 @@ class Steps extends React.Component {
     onFinish(){
       var self = this;
       this.props.onFinish(this.state.parameters);
-      emitter.on('dataDownloaded', (maxValue, rangesNumber)=>{
-          self.setState({downloaded: true, maxValue, rangesNumber});
+      emitter.on('dataDownloaded', (response)=>{
+        if(response){
+            var maxValue = response.data.max_value;
+            var rangesNumber =  Object.keys(response.data.result).length;
+            var ranges =  response.ranges;
+            self.setState({downloaded: true, maxValue, rangesNumber, ranges, data:response});
+        }
+        else
+            self.setState({downloaded: true, errorOnDownload:true});
       });
     }
 
@@ -193,10 +202,9 @@ class Steps extends React.Component {
                 <Select
                 id="gasTypeSelect"
                 label="Gas type"
-                value={this.textFieldValues.gas_type}
+                value={this.textFieldValues.gas}
                 className={classes.selectField}
-                onChange={this.handleChange('gas_type')}
-                margin="normal"
+                onChange={this.handleChange('gas')}
                 inputProps={{
                   name: 'Gas type',
                   id: 'gas-type',
@@ -205,9 +213,9 @@ class Steps extends React.Component {
                     {GAS.map((name, index) => (
                     <MenuItem
                       key={index}
-                      value={index}
+                      value={name}
                       selected={
-                          (this.state.parameters.gas_type === index)
+                          (this.state.parameters.gas === name)
                       }
                     >
                       {name}
@@ -222,21 +230,20 @@ class Steps extends React.Component {
             value={this.textFieldValues.sourceStrength}
             onChange={this.handleChange('sourceStrength')}
             className={classes.textField}
-            margin="normal"
             error={(isNaN(this.textFieldValues.sourceStrength)? true:false )}
             InputProps={{
                 endAdornment: <InputAdornment position="end">grams/seconds</InputAdornment>,
             }}
+            margin="normal"
             />
             <FormControl className={classes.formControl}>
               <InputLabel htmlFor="gas-type">Release time</InputLabel>
               <Select
               id="timeTypeSelect"
               label="Release time"
-              value={this.textFieldValues.gas_type}
+              value={this.textFieldValues.gas}
               className={classes.selectField}
               onChange={this.handleChange('time')}
-              margin="normal"
               inputProps={{
                 name: 'Release time',
                 id: 'time',
@@ -245,9 +252,9 @@ class Steps extends React.Component {
                   {TIME.map((name, index) => (
                   <MenuItem
                     key={index}
-                    value={index}
+                    value={name}
                     selected={
-                        (this.state.parameters.time === index)
+                        (this.state.parameters.time === name)
                     }
                   >
                     {name} h
@@ -265,8 +272,8 @@ class Steps extends React.Component {
             value={this.textFieldValues.lon}
             className={classes.textField}
             onChange={this.handleChange('lon')}
-            margin="normal"
             error={(isNaN(this.textFieldValues.lon)? true:false )}
+            margin="normal"
             />
             <TextField
             id="latTextField"
@@ -274,8 +281,8 @@ class Steps extends React.Component {
             value={this.textFieldValues.lat}
             onChange={this.handleChange('lat')}
             className={classes.textField}
-            margin="normal"
             error={(isNaN(this.textFieldValues.lat)? true:false )}
+            margin="normal"
             />
             <TextField
             id="heightTextField"
@@ -284,11 +291,11 @@ class Steps extends React.Component {
             value={this.textFieldValues.height}
             onChange={this.handleChange('height')}
             className={classes.textField}
-            margin="normal"
             error={(isNaN(this.textFieldValues.height)? true:false )}
             InputProps={{
                 endAdornment: <InputAdornment position="end">m</InputAdornment>,
             }}
+            margin="normal"
             />
         </form>);
       case 2:
@@ -300,11 +307,11 @@ class Steps extends React.Component {
                 value={this.textFieldValues.windSpeed}
                 className={classes.textField}
                 onChange={this.handleChange('windSpeed')}
-                margin="normal"
                 error={(isNaN(this.textFieldValues.windSpeed)? true:false )}
                 InputProps={{
                     endAdornment: <InputAdornment position="end">m/s</InputAdornment>,
                 }}
+                margin="normal"
                 />
                 <TextField
                 id="directionTextField"
@@ -314,11 +321,11 @@ class Steps extends React.Component {
                 value={this.textFieldValues.windDirection}
                 onChange={this.handleChange('windDirection')}
                 className={classes.textField}
-                margin="normal"
                 error={(isNaN(this.textFieldValues.windDirection)? true:false )}
                 InputProps={{
                     endAdornment: <InputAdornment position="end">degrees</InputAdornment>,
                 }}
+                margin="normal"
                 />
                 <TextField
                 id="stabilityTextField"
@@ -332,8 +339,8 @@ class Steps extends React.Component {
                         className: classes.menu,
                     },
                 }}
-                helperText="Select weather stability"
                 margin="normal"
+                helperText="Select weather stability"
                 >
                 {WEATHER_STABILITY.map(option => (
                     <MenuItem key={option.value} value={option.value}>
@@ -354,7 +361,6 @@ class Steps extends React.Component {
                     value={this.textFieldValues.calculationArea}
                     className={classes.selectField}
                     onChange={this.handleChange('calculationArea')}
-                    margin="normal"
                     inputProps={{
                       name: 'Calculation area height',
                       id: 'calculation-area',
@@ -379,7 +385,6 @@ class Steps extends React.Component {
                     value={this.textFieldValues.outputH}
                     onChange={this.handleChange('outputH')}
                     label="Calculation area height"
-                    margin="normal"
                     inputProps={{
                       name: 'Calculation area height',
                       id: 'output-height',
@@ -486,14 +491,25 @@ class Steps extends React.Component {
     const steps = getSteps();
     const { activeStep } = this.state;
     const rangeValue = this.state.maxValue/this.state.rangesNumber;
-    var marks = {
-      0:' 0 - 1 [µg]',
-      1:'1 - '+ Math.round(rangeValue) + ' [µg]'
-    };
 
-    for (let index = 2; index < this.state.rangesNumber; index++) {
-      marks[index] =  index * Math.round(rangeValue) + ' - ' + (1 + index) * Math.round(rangeValue) + ' [µg]';
+    if(this.state.parameters.gas == "other"){
+
+      var marks = {
+        0:' 0 - 1 [µg]',
+        1:'1 - '+ Math.round(rangeValue) + ' [µg]'
+      };
+      
+      for (let index = 2; index < this.state.rangesNumber; index++) {
+        marks[index] =  index * Math.round(rangeValue) + ' - ' + (1 + index) * Math.round(rangeValue) + ' [µg]';
+      }  
+    }else{
+      var marks = {};
+      
+      for (let index = 1; index < this.state.rangesNumber; index++) {
+        marks[index-1] = GAS_CONCENTRATION_KEY[index-1] + range[index-1]*1000 + ' - ' + range[index]*1000 + ' [mg]';
+      } 
     }
+
 
     return (
       <div className={classes.root}>
@@ -520,7 +536,7 @@ class Steps extends React.Component {
               <div className={classes.container}>
                 <div className={classes.loader}>
                 {
-                  (this.state.downloaded == true) ? 
+                  (this.state.downloaded && !this.state.errorOnDownload) ? 
                   (
                   <div style={{ marginBottom:"1em"}}>                      
                       <div style={sliderStyle}> 
@@ -567,7 +583,7 @@ class Steps extends React.Component {
                       
                   </div>)
                   :
-                  <LinearProgress color="secondary" />
+                  (!this.state.errorOnDownload) ? <LinearProgress color="secondary"/> : <Typography>There were some problems. Contact Administrator or try again.</Typography> 
                 }
                 </div>
               </div>

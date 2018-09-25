@@ -1,5 +1,7 @@
 package constants;
 
+import jdk.nashorn.internal.objects.Global;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -33,4 +35,9 @@ public class Configuration {
     public static final String RESULT_PATH = MY_PATH+"results/";
     public static final double NO_OUTPUT_HEIGHT = -419;
     
+    //array with max good, standard, alert, warning, emergency and significant harm concentration
+    public static final String[] RANGES_NAMES =  new String[]{"Standard", "Alert", "Warning", "Emergency", "Significant Harm"};
+    public static final double[] CO = new double[]{0, 2, 6, 9, 15, 21, 24, Global.Infinity}; //mg/m3
+    public static final double[] SO2 = new double[]{0, 2, 9, 19, 38, 50, 63, Global.Infinity}; //mg/m3
+
 }

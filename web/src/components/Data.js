@@ -108,7 +108,7 @@ class Data extends React.Component {
                 wind_speed: this.props.parameters.windSpeed,
                 wind_angle: this.props.parameters.windDirection,
                 h: this.props.parameters.height,
-                src_str:this.props.parameters.sourceStrength,
+                src_str:this.props.parameters.sourceStrength*3600*this.props.parameters.time,
                 reffl: this.props.parameters.refflectionCo,
                 stb_class: this.props.parameters.weatherStabilityClass,
                 grid: this.props.parameters.grid,
@@ -116,12 +116,13 @@ class Data extends React.Component {
                 lat: this.props.parameters.lat,
                 dimension_h:this.props.parameters.outputH,
                 dimension: this.props.parameters.calculationArea,
+                gas:this.props.parameters.gas
             }
         }).then(function (response) {
             console.log(response);
             self.calculateCenterLine(self.props.parameters.windDirection);
             self.setState({downloaded:true, data:response.data});
-            self.emitter.emit("dataDownloaded", response.data.max_value, Object.keys(response.data.result).length);
+            self.emitter.emit("dataDownloaded", response.data);
         }).catch(function (error) {
             console.log(error);
             self.emitter.emit("dataDownloaded", false);

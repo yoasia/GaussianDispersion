@@ -6,6 +6,7 @@
 
 import constants.DIMENSION;
 import calculation.GaussianModel;
+import constants.GAS_TYPE;
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.json.JsonObject;
@@ -46,7 +47,7 @@ public class gaussDemo3d extends HttpServlet {
             /* TODO output your page here. You may use following sample code. */
 
             //create Json Object
-            JSONObject json = dataObject.getRangedResult();
+            JSONObject json = dataObject.getRangedResult(GAS_TYPE.OTHER.name());
             String str = json.toString();
             out.flush();
             // finally output the json string       

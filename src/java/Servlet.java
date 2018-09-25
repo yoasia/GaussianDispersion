@@ -53,6 +53,8 @@ public class Servlet extends HttpServlet {
         String s_2d = request.getParameter("_2d");
         String s_3d = request.getParameter("_3d");
         String s_geoJSON = request.getParameter("geoJSON");
+        String s_gas = request.getParameter("gas");
+
 
         String content_type = request.getContentType();
         
@@ -127,7 +129,7 @@ public class Servlet extends HttpServlet {
         
         
         try (PrintWriter out = response.getWriter()) {
-            JSONObject json = data.getRangedResult();
+            JSONObject json = data.getRangedResult(s_gas);
              
              // finally output the json string       
             out.print(json);

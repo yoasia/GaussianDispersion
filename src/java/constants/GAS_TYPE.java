@@ -9,6 +9,8 @@ package constants;
  *
  * @author yoa
  */
-public class GAS_TYPE {
-    
+public enum GAS_TYPE {
+        CO, 
+        SO2,
+        OTHER
 }

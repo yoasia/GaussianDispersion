@@ -5,6 +5,7 @@
  */
 package calculation;
 
+import static constants.Configuration.CO;
 import static constants.Configuration.CUDA_BLOCK_SIZE_X;
 import constants.DIMENSION;
 import java.awt.image.BufferedImage;
@@ -61,6 +62,8 @@ import java.util.Map;
 import static constants.Configuration.DEFAULT_AREA_HEIGHT;
 import static constants.Configuration.MAX_NUMBER_RETURNED_POINTS;
 import static constants.Configuration.MIN_CONCENTRATION;
+import static constants.Configuration.SO2;
+import constants.GAS_TYPE;
 
 /**
  *
@@ -191,10 +194,29 @@ public class GaussianModel {
         }
     }
 
-    public JSONObject getRangedResult() {
+    public JSONObject getRangedResult(String gas) {
         JSONObject returnObject = new JSONObject();
+        double[] ranges;
         
-        //json with  input parameters
+        //create ranges
+        if(gas == "CO"){
+            resultRanges = createRanges(result, max_value, GAS_TYPE.CO);
+            ranges = CO;
+        }
+        else if (gas == "SO2"){
+            resultRanges = createRanges(result, max_value, GAS_TYPE.SO2);
+            ranges = SO2;
+        }
+        else{
+            resultRanges = createRanges(result, max_value, GAS_TYPE.OTHER);
+            double rangeValue = max_value / NUMBER_OF_DATA_RANGES;
+            ranges = new double[NUMBER_OF_DATA_RANGES];
+            for (int i = 0; i < NUMBER_OF_DATA_RANGES; i++) {
+                ranges[i] = i*rangeValue;
+            }
+        }
+        
+        //json with input parameters
         JSONObject input = new JSONObject();
         input.put("wind_speed", wind_speed);
         input.put("wind_direction", wind_direction);
@@ -210,6 +232,7 @@ public class GaussianModel {
         returnObject.put("max_value", max_value);
         returnObject.put("unit", "µg");
         returnObject.put("grid", grid);
+        returnObject.put("ranges", ranges);
 
         return returnObject;
     }
@@ -533,8 +556,8 @@ public class GaussianModel {
         translation_vector = calculateTranslation(angle, max * 2);
 
         for (int i = 0; i < numElements - 1; i++) {
-//            if (hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i] && hostOutput[i] > MIN_CONCENTRATION) {
-            if (hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i]) {
+            if (hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i] && hostOutput[i] > MIN_CONCENTRATION) {
+//            if (hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i]) {
 
 
                 JSONObject point = new JSONObject();
@@ -657,9 +680,6 @@ public class GaussianModel {
         //reduce number of points
         result = reduceNumberOfPoints(result);
 
-        //create ranges
-        resultRanges = createRanges(result, max_value);
-
         // retrieve image
         if (SAVE_RESULT_IMAGE) {
             File outputfile = new File(RESULT_PATH + sdf.format(cal.getTime()) + ".bmp");
@@ -767,7 +787,7 @@ public class GaussianModel {
 
     }
 
-    private JSONObject createRanges(JSONArray jsonArr, double maxValue) {
+    private JSONObject createRanges(JSONArray jsonArr, double maxValue, GAS_TYPE gas) {
         JSONObject resultWithRanges = new JSONObject();
         JSONArray rangeData[] = new JSONArray[NUMBER_OF_DATA_RANGES + 2];
 
@@ -780,15 +800,39 @@ public class GaussianModel {
 
         for (int i = 0; i < jsonArr.size(); i++) {
             JSONObject obj = (JSONObject) jsonArr.get(i);
+            double value = (double) obj.get("value");
+            
+            if(gas == GAS_TYPE.OTHER){            
+//              if((double)(obj.get("value"))<= 1.0){
+//                  rangeData[0].add(jsonArr.get(i));
+//              } else  {
+                double indexD = value / rangeValue;
+                int index = (int) Math.floor(indexD + 1);
+                rangeData[index].add(obj);
+//              }
+            }
+            else if (gas == GAS_TYPE.CO){
+                
+                for (int j = 1; j < CO.length; j++) {
+                    double minC = CO[j-1] * 1000; //minimal concentration in range 
+                    double maxC = CO[j] * 1000; //maximal concentration
 
-//            if((double)(obj.get("value"))<= 1.0){
-//                rangeData[0].add(jsonArr.get(i));
-//            } else  {
-            double indexD = (double) (obj.get("value")) / rangeValue;
-            int index = (int) Math.floor(indexD + 1);
-            rangeData[index].add(obj);
-//            }
+                    if(value > minC && value <= maxC){
+                        rangeData[j-1].add(obj);
+                    }
+                }
+                
+            }
+            else{
+                for (int j = 1; j < SO2.length; j++) {
+                    double minC = SO2[j-1] * 1000; //minimal concentration in j-1 range 
+                    double maxC = SO2[j] * 1000; //maximal concentration in j-1 range 
 
+                    if(value > minC && value <= maxC){
+                        rangeData[j-1].add(obj);
+                    }
+                }
+            }
         }
 
         for (int i = 0; i < NUMBER_OF_DATA_RANGES + 2; i++) {

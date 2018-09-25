@@ -6,6 +6,7 @@
 
 import constants.DIMENSION;
 import calculation.GaussianModel;
+import constants.GAS_TYPE;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -50,7 +51,7 @@ public class gaussDemo2d extends HttpServlet {
             /* TODO output your page here. You may use following sample code. */
 
             //create Json Object
-            JSONObject json = dataObject.getRangedResult();
+            JSONObject json = dataObject.getRangedResult(GAS_TYPE.OTHER.name());
             out.flush();
             // finally output the json string       
             out.print(json);

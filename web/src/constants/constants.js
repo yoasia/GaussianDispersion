@@ -1,6 +1,6 @@
 export const NO_VALUE = "-1";
 
-export const GAS = ["CO", "SO2"];
+export const GAS = ["CO", "SO2", "other"];
 
 export const GAS_CONCENTRATION ={
     "CO":{
@@ -21,4 +21,13 @@ export const GAS_CONCENTRATION ={
     }
 }
 
-export const TIME = [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24];
+export const GAS_CONCENTRATION_KEY = [
+    "Good",
+    "Standard",
+    "Alert",
+    "Warning",
+    "Emergency",
+    "Significant Harm"
+]
+
+export const TIME = [0.5, 1]; //h

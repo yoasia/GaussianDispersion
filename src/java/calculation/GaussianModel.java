@@ -70,7 +70,7 @@ public class GaussianModel {
 
     private static final int R = 6378137;
 
-    private double wind_speed_horizontal;
+    private double wind_speed;
     private double wind_direction;
     private double release_height;
     private double source_strength;
@@ -79,11 +79,12 @@ public class GaussianModel {
     private double grid;
     private double lon;
     private double lat;
-    private double output_height;
+    private double dimension_height;
     private int N;
     private JSONArray result;
     private JSONObject resultRanges;
     private double max_value = Double.NEGATIVE_INFINITY;
+    private double output_height;
 
     public GaussianModel() {
         loadDemo();
@@ -94,16 +95,16 @@ public class GaussianModel {
             double wind_direction_,
             double release_height_,
             double source_strength_,
-            double refflection_co_,
             int stability_class_num_,
-            double z0_,
             double lon_,
             double lat_,
+            double dimension_h_,
             double output_h_,
             double... optional) throws IOException {
         double area_dimension_ = optional.length > 0 ? optional[0] : MAX_AREA_DIMENSION;
-        double _output_h = output_h_;
-        double grid_ = calculateGrid(area_dimension_, _output_h);
+        double _dimension_h_ = dimension_h_;
+        double _output_h__ = output_h_;
+        double grid_ = calculateGrid(area_dimension_, _dimension_h_);
 
         init(wind_speed_horizontal_,
                 wind_direction_,
@@ -111,9 +112,10 @@ public class GaussianModel {
                 source_strength_,
                 stability_class_num_,
                 lon_, lat_,
-                output_h_,
+                dimension_h_,
                 area_dimension_,
-                grid_);
+                grid_,
+                output_h_);
     }
 
     public GaussianModel(double wind_speed_horizontal, double wind_direction, double release_height, double source_strength, double refflection_co, int stability_class_num, double z0, double a, double b, double p, double q, double lon, double lat) {
@@ -128,19 +130,20 @@ public class GaussianModel {
             int stability_class_num_,
             double lon_,
             double lat_,
-            double output_h_,
+            double dimension_h_,
             double area_dimension_,
-            double grid_
+            double grid_,
+            double output_h_
     ) throws IOException {
-        this.wind_speed_horizontal = wind_speed_horizontal_;
+        this.wind_speed = wind_speed_horizontal_;
         this.wind_direction = wind_direction_;
         this.release_height = release_height_;
         this.source_strength = source_strength_;
         this.stability_class_num = stability_class_num_;
         this.lon = lon_;
         this.lat = lat_;
+        this.dimension_height = dimension_h_;
         this.output_height = output_h_;
-
         this.area_dimension = area_dimension_;
         this.grid = grid_;
         this.N = (int) (area_dimension_ / grid);
@@ -163,12 +166,10 @@ public class GaussianModel {
             double release_height = (Long) jsonObject.get("release_height");
             double source_strength = (Double) jsonObject.get("source_strength");
             int stability_class_num = toIntExact((Long) jsonObject.get("stability_class_num"));
-            double z0 = (Double) jsonObject.get("z0");
             double lon = (Double) jsonObject.get("lon");
             double lat = (Double) jsonObject.get("lat");
             double area_dimension = (Long) jsonObject.get("area_dimension");
             double grid = (Double) jsonObject.get("grid");
-
             init(wind_speed_horizontal,
                     wind_direction,
                     release_height,
@@ -178,7 +179,8 @@ public class GaussianModel {
                     lat,
                     NO_OUTPUT_HEIGHT,
                     area_dimension,
-                    grid);
+                    grid,
+                    NO_OUTPUT_HEIGHT);
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -191,6 +193,19 @@ public class GaussianModel {
 
     public JSONObject getRangedResult() {
         JSONObject returnObject = new JSONObject();
+        
+        //json with  input parameters
+        JSONObject input = new JSONObject();
+        input.put("wind_speed", wind_speed);
+        input.put("wind_direction", wind_direction);
+        input.put("release_height", release_height);
+        input.put("source_strength", source_strength);
+        input.put("stability_class_num", stability_class_num);
+        input.put("lon", lon);
+        input.put("lat", lat);
+        input.put("output_height", dimension_height);
+        
+        returnObject.put("input_parameters", input);
         returnObject.put("result", resultRanges);
         returnObject.put("max_value", max_value);
         returnObject.put("unit", "µg");
@@ -201,6 +216,20 @@ public class GaussianModel {
 
     public JSONObject getSortedResult() {
         JSONObject returnObject = new JSONObject();
+        
+        //json with  input parameters
+        JSONObject input = new JSONObject();
+        input.put("wind_speed", wind_speed);
+        input.put("wind_direction", wind_direction);
+        input.put("release_height", release_height);
+        input.put("source_strength", source_strength);
+        input.put("stability_class_num", stability_class_num);
+        input.put("lon", lon);
+        input.put("lat", lat);
+        input.put("output_height", dimension_height);
+        
+        returnObject.put("input_parameters", input);
+        
         returnObject.put("result", result);
         returnObject.put("max_value", max_value);
         returnObject.put("unit", "µg");
@@ -403,7 +432,7 @@ public class GaussianModel {
     public void calculate(DIMENSION dim) throws IOException {
 
         double x_tmp, y_tmp, max;
-        double angle;
+        double angle, wind_to;
         double translation_vector[] = new double[2];
         int tmp[] = new int[6];
         // Enable exceptions and omit all subsequent error checks
@@ -438,10 +467,9 @@ public class GaussianModel {
 
         // Set up the kernel parameters: A pointer to an array
         // of pointers which point to the actual values.
-        Pointer kernelParameters = Pointer.to(
-                Pointer.to(new int[]{N}),
+        Pointer kernelParameters = Pointer.to(Pointer.to(new int[]{N}),
                 Pointer.to(new double[]{source_strength}),
-                Pointer.to(new double[]{wind_speed_horizontal}),
+                Pointer.to(new double[]{wind_speed}),
                 Pointer.to(new double[]{wind_direction}),
                 Pointer.to(new int[]{stability_class_num}),
                 Pointer.to(new double[]{grid}),
@@ -493,16 +521,21 @@ public class GaussianModel {
 
         //calculate dimension of area 
         max = (N * grid) / 2;
+        
         //if angle > 360
         angle = (90 - wind_direction) % 360;
+        wind_to = angle -180;
         //if angle < 0
         angle = (angle < 0) ? (angle + 360 * Math.floor(1 + (-1) * angle / 360)) : angle;
-
+        wind_to = (wind_to < 0) ? (wind_to + 360 * Math.floor(1 + (-1) * wind_to / 360)) : wind_to;
+        
         //calculate translation
         translation_vector = calculateTranslation(angle, max * 2);
 
         for (int i = 0; i < numElements - 1; i++) {
-            if (hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i] && hostOutput[i] > MIN_CONCENTRATION) {
+//            if (hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i] && hostOutput[i] > MIN_CONCENTRATION) {
+            if (hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i]) {
+
 
                 JSONObject point = new JSONObject();
 
@@ -518,8 +551,8 @@ public class GaussianModel {
                 y_tmp = y;
 
                 //point rotation
-                x = x_tmp * Math.cos(-wind_direction * Math.PI / 180) - y_tmp * Math.sin(-wind_direction * Math.PI / 180);
-                y = x_tmp * Math.sin(-wind_direction * Math.PI / 180) + y_tmp * Math.cos(-wind_direction * Math.PI / 180);
+                x = x_tmp * Math.cos(wind_to * Math.PI / 180) - y_tmp * Math.sin(wind_to * Math.PI / 180);
+                y = x_tmp * Math.sin(wind_to * Math.PI / 180) + y_tmp * Math.cos(wind_to * Math.PI / 180);
 
                 x_tmp = x;
                 y_tmp = y;
@@ -580,8 +613,8 @@ public class GaussianModel {
                 x_tmp = x;
                 y_tmp = y;
 
-                x = x_tmp * Math.cos(wind_direction - 180) - y_tmp * Math.sin(wind_direction - 180);
-                y = x_tmp * Math.sin(wind_direction - 180) + y_tmp * Math.cos(wind_direction - 180);
+                x = x_tmp * Math.cos(wind_to* Math.PI / 180) - y_tmp * Math.sin(wind_to* Math.PI / 180);
+                y = x_tmp * Math.sin(wind_to* Math.PI / 180) + y_tmp * Math.cos(wind_to* Math.PI / 180);
 
                 x_tmp = x;
                 y_tmp = y;

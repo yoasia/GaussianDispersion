@@ -21,7 +21,8 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
     double translation_x = 0.0;
     double translation_y = 0.0;
     double wind_dir_deg = (double)(((90 - (int) wind_dir)) % 360);
-    
+    double winds_to = (double)(wind_dir_deg + 180);
+
     if(wind_dir_deg < 0)
         wind_dir_deg+= 360;
 
@@ -37,9 +38,14 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
     y = iy * grid;
     z = iz * grid;
 
+
+    x_tmp = x;
+    y_tmp = y;
+
     //point rotation
-    x = x * cos(-wind_dir * PI/180) - y * sin(-wind_dir * PI/180);
-    y = x * sin(-wind_dir * PI/180) + y * cos(-wind_dir * PI/180);
+    x = x_tmp*cos(winds_to*PI/180) - y_tmp*sin(winds_to*PI/180);
+    y = x_tmp*sin(winds_to*PI/180) + y_tmp*cos(winds_to*PI/180);
+
 
     max = (n * grid)/2;
 
@@ -91,9 +97,9 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
 
     int resultIndex = (iz * n * n) + (iy * n) + ix;
 
-    //calculate wind x and wind y (it winds from wind_dir -180)
-    windX = u * sin((wind_dir_deg - 180)*PI/180);
-    windY = u * cos((wind_dir_deg - 180)*PI/180);
+    //calculate wind x and wind y (it winds to wind_dir -180)
+    windX = u * sin(winds_to*PI/180);
+    windY = u * cos(winds_to*PI/180);
 
     //distance vector
     distance = sqrt(x*x + y*y);

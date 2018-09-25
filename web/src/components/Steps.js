@@ -64,14 +64,12 @@ class Steps extends React.Component {
                 windDirection:30,
                 height:2,
                 sourceStrength:5,
-                refflectionCo:1,
                 weatherStabilityClass:1,
                 areaDimension:null,
                 calculationArea:1000,
                 outputH: 100,
                 gas_type:0,
                 time: 1
-
             },
             displayParameters:{
               min_value:0,
@@ -81,7 +79,6 @@ class Steps extends React.Component {
             },
             rangesNumber:null,
             maxValue: null,
-            checkedA:true
           };
         this.textFieldValues = Object.assign({}, this.state.parameters);
         this.displayFormValues = Object.assign({}, this.state.displayParameters);
@@ -172,7 +169,6 @@ class Steps extends React.Component {
         
         if(name == "point_shape"){
           emitter.emit("pointShapeChanged", value);
-
         }
         else if(name == "transparency"){
           emitter.emit("transparencyChanged", value);
@@ -429,7 +425,7 @@ class Steps extends React.Component {
         skipped,
     });
 
-    if(activeStep > 1){
+    if(activeStep > 2){
       this.onFinish()
     }
   };

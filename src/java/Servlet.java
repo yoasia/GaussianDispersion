@@ -45,13 +45,15 @@ public class Servlet extends HttpServlet {
         String s_release_height = request.getParameter("h");
         String s_source_strength = request.getParameter("src_str");
         String s_stability_class_num = request.getParameter("stb_class");
-        String s_z0 = request.getParameter("z0");
         String s_dimension = request.getParameter("dimension");
         String s_lon = request.getParameter("lon");
         String s_lat = request.getParameter("lat");
+        String s_dimension_h = request.getParameter("dimension_h");
         String s_output_h = request.getParameter("output_h");
         String s_2d = request.getParameter("_2d");
         String s_3d = request.getParameter("_3d");
+        String s_geoJSON = request.getParameter("geoJSON");
+
         String content_type = request.getContentType();
         
         //Check if user set every parametr
@@ -59,7 +61,6 @@ public class Servlet extends HttpServlet {
         || s_wind_direction == null
         || s_release_height == null
         || s_source_strength == null
-        || s_refflection_co == null
         || s_stability_class_num == null
         || s_lon == null
         || s_lat == null
@@ -74,12 +75,14 @@ public class Servlet extends HttpServlet {
                 json.put("source_strength",s_source_strength);
                 json.put("stability_class_num",s_stability_class_num);
                 json.put("dimension",s_dimension);
+                json.put("output_h",s_output_h);
                 json.put("s_lon",s_lon);
                 json.put("s_lat",s_lat);
                 json.put("s_2d",s_2d);
                 json.put("s_3d",s_3d);
-                json.put("s_output_h",s_output_h);
-                 
+                json.put("s_dimension_h",s_dimension_h);
+                json.put("geoJSON",s_geoJSON);
+
                  // finally output the json string       
                 out.print(json);
                 out.flush();
@@ -96,11 +99,13 @@ public class Servlet extends HttpServlet {
         int stability_class_num = Integer.parseInt(s_stability_class_num);
         double lon = Double.parseDouble(s_lon);
         double lat = Double.parseDouble(s_lat);
-        double z0 = Double.parseDouble((s_z0 == null) ? "0": s_z0);
-        boolean _2d = (s_2d == null ? false : true);
-        boolean _3d = (s_3d == null ? false: true);
+        boolean _2d = (s_2d == null ? false : Boolean.parseBoolean(s_2d));
+        //boolean _3d = (s_3d == null ? false: Boolean.parseBoolean(s_3d));
+        boolean _geoJSON = (s_geoJSON == null ? false : Boolean.parseBoolean(s_geoJSON));
+
+        double _dimension_h = (s_dimension_h == null ? NO_OUTPUT_HEIGHT : Double.parseDouble(s_dimension_h));
         double _output_h = (s_output_h == null ? NO_OUTPUT_HEIGHT : Double.parseDouble(s_output_h));
-        
+
         double dimension = (s_dimension == null) ? MAX_AREA_DIMENSION: Double.parseDouble(s_dimension);
 
         data = new calculation.GaussianModel(wind_speed_horizontal, 
@@ -108,16 +113,16 @@ public class Servlet extends HttpServlet {
             release_height,
             source_strength,
             stability_class_num,
-            z0,
             lon, 
             lat,
+            _dimension_h,
             _output_h,
             dimension
             );
         
         if(_2d == true)
             data.calculate(DIMENSION.TWO);
-        else if(_3d == true)
+        else
             data.calculate(DIMENSION.THREE);
         
         

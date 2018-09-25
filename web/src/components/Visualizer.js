@@ -81,8 +81,8 @@ class Visualizer extends Component {
         const self = this;
         var grid;
 
-        if(false){
-        // if(this.state.data){
+        // if(false){
+        if(this.state.data){
             grid = this.state.data.grid;
             for (let i = 0; i <= Object.keys(self.state.data.result).length - 1 - this.state.currentLayer; i++) {
                 this.state.data.result['range'+i].forEach((element, index) => {

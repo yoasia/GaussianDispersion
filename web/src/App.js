@@ -18,7 +18,6 @@ class App extends React.Component {
         
         this.state = { 
             parameters:null,
-            callbackGetData:null
         };
 
         this.emitter = new EventEmitter();

@@ -6,8 +6,9 @@
     "refflection_co":1,
     "stability_class_num":1,
     "z0":0.029,
-    "area_dimension":3000,
+    "area_dimension":3000, 
     "grid":50.0,
     "lon":20.0,
-    "lat":52.0
+    "lat":52.0,
+    "time":0.5 
 }

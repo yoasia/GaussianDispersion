@@ -22,7 +22,7 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControl from '@material-ui/core/FormControl';
 import {figureEnum, DEFAULT_ALPHA} from '../constants/visualization';
 import {WEATHER_STABILITY} from '../constants/weather';
-import {NO_VALUE, GAS, TIME} from '../constants/constants';
+import {NO_VALUE, GAS, TIME, GAS_CONCENTRATION_KEY, GAS_CONCENTRATION} from '../constants/constants';
 
 import {styles, sliderStyle, wrapperStyle, buttonFigureStyle} from '../styles/Steps-styles';
 import 'rc-slider/assets/index.css';
@@ -69,7 +69,7 @@ class Steps extends React.Component {
                 areaDimension:null,
                 calculationArea:1000,
                 outputH: 100,
-                gas:"CO",
+                gas:0,
                 time: 1
             },
             displayParameters:{
@@ -213,9 +213,9 @@ class Steps extends React.Component {
                     {GAS.map((name, index) => (
                     <MenuItem
                       key={index}
-                      value={name}
+                      value={index}
                       selected={
-                          (this.state.parameters.gas === name)
+                          (this.state.parameters.gas === index)
                       }
                     >
                       {name}
@@ -241,7 +241,7 @@ class Steps extends React.Component {
               <Select
               id="timeTypeSelect"
               label="Release time"
-              value={this.textFieldValues.gas}
+              value={this.textFieldValues.time}
               className={classes.selectField}
               onChange={this.handleChange('time')}
               inputProps={{

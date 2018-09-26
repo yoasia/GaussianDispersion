@@ -3,7 +3,9 @@ import EventEmitter from 'event-emitter';
 import axios from 'axios';
 import { saveAs } from 'file-saver/FileSaver';
 
+//aaaaa
 import Map from './Map';
+import {GAS} from '../constants/constants';
 
 class Data extends React.Component {
 
@@ -116,7 +118,7 @@ class Data extends React.Component {
                 lat: this.props.parameters.lat,
                 dimension_h:this.props.parameters.outputH,
                 dimension: this.props.parameters.calculationArea,
-                gas:this.props.parameters.gas
+                gas:GAS[this.props.parameters.gas]
             }
         }).then(function (response) {
             console.log(response);

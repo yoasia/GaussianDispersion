@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import EventEmitter from 'event-emitter';
 import { hot } from 'react-hot-loader'
 
-
 import Data from './components/Data';
 import Steps from './components/Steps';
 

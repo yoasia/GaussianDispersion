@@ -57,9 +57,9 @@ module.exports = {
         new HtmlIncludeAssetsPlugin({
             append: false,
             assets: [
-                "cesium/Widgets/widgets.css",
+                "dst/cesium/Widgets/widgets.css",
                 "css/styles.css",
-                "cesium/Cesium.js"
+                "dst/cesium/Cesium.js"
             ]
         })
     ],

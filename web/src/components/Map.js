@@ -1,6 +1,6 @@
 import React from 'react';
 import {  Cartesian3, BoundingSphere, Cartesian2 } from "cesium/Cesium";
-import Cesium from 'cesium';
+ import Cesium from 'cesium';
  
 import { Viewer, Entity, Camera, CameraFlyTo } from "cesium-react";
 import Visualizer from './Visualizer';

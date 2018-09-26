@@ -199,11 +199,11 @@ public class GaussianModel {
         double[] ranges;
         
         //create ranges
-        if(gas == "CO"){
+        if(gas.equals("CO")){
             resultRanges = createRanges(result, max_value, GAS_TYPE.CO);
             ranges = CO;
         }
-        else if (gas == "SO2"){
+        else if (gas.equals("SO2")){
             resultRanges = createRanges(result, max_value, GAS_TYPE.SO2);
             ranges = SO2;
         }

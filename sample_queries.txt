@@ -1,3 +1,0 @@
- http://localhost:46229/Server/gauss?wind_speed=5&wind_angle=0&h=2&src_str=5&reffl=1&stb_class=4&grid=50&lon=20&lat=52&_3d=true
- http://localhost:46229/Server/gauss?wind_speed=5&wind_angle=100&h=2&src_str=5&reffl=1&stb_class=6&grid=50&lon=20&lat=52&_3d=true
- 

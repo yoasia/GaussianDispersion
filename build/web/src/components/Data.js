@@ -3,7 +3,9 @@ import EventEmitter from 'event-emitter';
 import axios from 'axios';
 import { saveAs } from 'file-saver/FileSaver';
 
+//aaaaa
 import Map from './Map';
+import {GAS} from '../constants/constants';
 
 class Data extends React.Component {
 
@@ -116,13 +118,16 @@ class Data extends React.Component {
                 lat: this.props.parameters.lat,
                 dimension_h:this.props.parameters.outputH,
                 dimension: this.props.parameters.calculationArea,
-                gas:this.props.parameters.gas
+                gas:GAS[this.props.parameters.gas]
             }
         }).then(function (response) {
             console.log(response);
             self.calculateCenterLine(self.props.parameters.windDirection);
+            var ranges = response.data.ranges;
+            ranges[ranges.length] = Infinity;
+            response.data.ranges = ranges;
             self.setState({downloaded:true, data:response.data});
-            self.emitter.emit("dataDownloaded", response.data);
+            self.emitter.emit("dataDownloaded", response);
         }).catch(function (error) {
             console.log(error);
             self.emitter.emit("dataDownloaded", false);

@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.json.simple.JSONObject;
 import static constants.Configuration.MAX_AREA_DIMENSION;
+import static constants.Configuration.MAX_NUMBER_OF_POINTS;
 import static constants.Configuration.NO_OUTPUT_HEIGHT;
 
 /**
@@ -119,13 +120,14 @@ public class Servlet extends HttpServlet {
             lat,
             _dimension_h,
             _output_h,
+            MAX_NUMBER_OF_POINTS,
             dimension
             );
         
         if(_2d == true)
-            data.calculate(DIMENSION.TWO);
+            data.calculate(DIMENSION.TWO, MAX_NUMBER_OF_POINTS);
         else
-            data.calculate(DIMENSION.THREE);
+            data.calculate(DIMENSION.THREE, MAX_NUMBER_OF_POINTS);
         
         
         try (PrintWriter out = response.getWriter()) {

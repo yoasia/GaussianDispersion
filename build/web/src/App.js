@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import EventEmitter from 'event-emitter';
 import { hot } from 'react-hot-loader'
 
-
 import Data from './components/Data';
 import Steps from './components/Steps';
 
@@ -19,7 +18,6 @@ class App extends React.Component {
         this.state = { 
             parameters:null,
         };
-
         this.emitter = new EventEmitter();
         this.setUserParameters = this.setUserParameters.bind(this);
     }

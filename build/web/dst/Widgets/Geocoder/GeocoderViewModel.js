@@ -7,11 +7,7 @@ define([
         '../../Core/DeveloperError',
         '../../Core/Event',
         '../../Core/GeocodeType',
-        '../../Core/Math',
         '../../Core/Matrix4',
-        '../../Core/Rectangle',
-        '../../Core/sampleTerrainMostDetailed',
-        '../../Scene/computeFlyToLocationForRectangle',
         '../../ThirdParty/knockout',
         '../../ThirdParty/when',
         '../createCommand',
@@ -25,19 +21,12 @@ define([
         DeveloperError,
         Event,
         GeocodeType,
-        CesiumMath,
         Matrix4,
-        Rectangle,
-        sampleTerrainMostDetailed,
-        computeFlyToLocationForRectangle,
         knockout,
         when,
         createCommand,
         getElement) {
     'use strict';
-
-    // The height we use if geocoding to a specific point instead of an rectangle.
-    var DEFAULT_HEIGHT = 1000;
 
     /**
      * The view model for the {@link Geocoder} widget.
@@ -50,7 +39,6 @@ define([
      *        If more than one are supplied, suggestions will be gathered for the geocoders that support it,
      *        and if no suggestion is selected the result from the first geocoder service wil be used.
      * @param {Number} [options.flightDuration] The duration of the camera flight to an entered location, in seconds.
-     * @param {Geocoder~DestinationFoundFunction} [options.destinationFound=GeocoderViewModel.flyToDestination] A callback function that is called after a successful geocode.  If not supplied, the default behavior is to fly the camera to the result destination.
      */
     function GeocoderViewModel(options) {
         //>>includeStart('debug', pragmas.debug);
@@ -78,7 +66,9 @@ define([
         this._suggestions = [];
         this._selectedSuggestion = undefined;
         this._showSuggestions = true;
-
+        this._updateCamera = updateCamera;
+        this._adjustSuggestionsScroll = adjustSuggestionsScroll;
+        this._updateSearchSuggestions = updateSearchSuggestions;
         this._handleArrowDown = handleArrowDown;
         this._handleArrowUp = handleArrowUp;
 
@@ -139,7 +129,7 @@ define([
             that._searchText = data.displayName;
             var destination = data.destination;
             clearSuggestions(that);
-            that.destinationFound(that, destination);
+            updateCamera(that, destination);
         };
 
         this.hideSuggestions = function () {
@@ -172,12 +162,6 @@ define([
          */
         this.autoComplete = defaultValue(options.autocomplete, true);
 
-        /**
-         * Gets and sets the command called when a geocode destination is found
-         * @type {Geocoder~DestinationFoundFunction}
-         */
-        this.destinationFound = defaultValue(options.destinationFound, GeocoderViewModel.flyToDestination);
-
         this._focusTextbox = false;
 
         knockout.track(this, ['_searchText', '_isSearchInProgress', 'keepExpanded', '_suggestions', '_selectedSuggestion', '_showSuggestions', '_focusTextbox']);
@@ -185,7 +169,7 @@ define([
         var searchTextObservable = knockout.getObservable(this, '_searchText');
         searchTextObservable.extend({ rateLimit: { timeout: 500 } });
         this._suggestionSubscription = searchTextObservable.subscribe(function() {
-            GeocoderViewModel._updateSearchSuggestions(that);
+            updateSearchSuggestions(that);
         });
         /**
          * Gets a value indicating whether a search is currently in progress.  This property is observable.
@@ -331,7 +315,7 @@ define([
         }
         next = currentIndex - 1;
         viewModel._selectedSuggestion = viewModel._suggestions[next];
-        GeocoderViewModel._adjustSuggestionsScroll(viewModel, next);
+        adjustSuggestionsScroll(viewModel, next);
     }
 
     function handleArrowDown(viewModel) {
@@ -343,67 +327,18 @@ define([
         var next = (currentIndex + 1) % numberOfSuggestions;
         viewModel._selectedSuggestion = viewModel._suggestions[next];
 
-        GeocoderViewModel._adjustSuggestionsScroll(viewModel, next);
+        adjustSuggestionsScroll(viewModel, next);
     }
 
-    function computeFlyToLocationForCartographic(cartographic, terrainProvider) {
-        var availability = defined(terrainProvider) ? terrainProvider.availability : undefined;
-
-        if (!defined(availability)) {
-            cartographic.height += DEFAULT_HEIGHT;
-            return when.resolve(cartographic);
-        }
-
-        return sampleTerrainMostDetailed(terrainProvider, [cartographic])
-            .then(function(positionOnTerrain) {
-                cartographic = positionOnTerrain[0];
-                cartographic.height += DEFAULT_HEIGHT;
-                return cartographic;
-            });
-    }
-
-    function flyToDestination(viewModel, destination) {
-        var scene = viewModel._scene;
-        var mapProjection = scene.mapProjection;
-        var ellipsoid = mapProjection.ellipsoid;
-
-        var camera = scene.camera;
-        var terrainProvider = scene.terrainProvider;
-        var finalDestination = destination;
-
-        var promise;
-        if (destination instanceof Rectangle) {
-            // Some geocoders return a Rectangle of zero width/height, treat it like a point instead.
-            if (CesiumMath.equalsEpsilon(destination.south, destination.north, CesiumMath.EPSILON7) &&
-                CesiumMath.equalsEpsilon(destination.east, destination.west, CesiumMath.EPSILON7)) {
-                // destination is now a Cartographic
-                destination = Rectangle.center(destination);
-            } else {
-                promise = computeFlyToLocationForRectangle(destination, scene);
-            }
-        } else { // destination is a Cartesian3
-            destination = ellipsoid.cartesianToCartographic(destination);
-        }
-
-        if (!defined(promise)) {
-            promise = computeFlyToLocationForCartographic(destination, terrainProvider);
-        }
-
-        promise
-            .then(function(result) {
-                finalDestination = ellipsoid.cartographicToCartesian(result);
-            })
-            .always(function() {
-                // Whether terrain querying succeeded or not, fly to the destination.
-                camera.flyTo({
-                    destination: finalDestination,
-                    complete: function() {
-                        viewModel._complete.raiseEvent();
-                    },
-                    duration: viewModel._flightDuration,
-                    endTransform: Matrix4.IDENTITY
-                });
-            });
+    function updateCamera(viewModel, destination) {
+        viewModel._scene.camera.flyTo({
+            destination : destination,
+            complete: function() {
+                viewModel._complete.raiseEvent();
+            },
+            duration : viewModel._flightDuration,
+            endTransform : Matrix4.IDENTITY
+        });
     }
 
     function chainPromise(promise, geocoderService, query, geocodeType) {
@@ -450,7 +385,7 @@ define([
                 var geocoderResults = result.value;
                 if (result.state === 'fulfilled' && defined(geocoderResults) && geocoderResults.length > 0) {
                     viewModel._searchText = geocoderResults[0].displayName;
-                    viewModel.destinationFound(viewModel, geocoderResults[0].destination);
+                    updateCamera(viewModel, geocoderResults[0].destination);
                     return;
                 }
                 viewModel._searchText = query + ' (not found)';
@@ -525,16 +460,6 @@ define([
                 }
             });
     }
-
-    /**
-     * A function to fly to the destination found by a successful geocode.
-     * @type {Geocoder~DestinationFoundFunction}
-     */
-    GeocoderViewModel.flyToDestination = flyToDestination;
-
-    //exposed for testing
-    GeocoderViewModel._updateSearchSuggestions = updateSearchSuggestions;
-    GeocoderViewModel._adjustSuggestionsScroll = adjustSuggestionsScroll;
 
     return GeocoderViewModel;
 });

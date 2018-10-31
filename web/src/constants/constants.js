@@ -22,6 +22,7 @@ export const GAS_CONCENTRATION ={
 }
 
 export const GAS_CONCENTRATION_KEY = [
+    "Clear",
     "Good",
     "Standard",
     "Alert",

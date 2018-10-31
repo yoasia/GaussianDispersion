@@ -36,6 +36,9 @@ class Map extends React.Component {
     componentWillMount() {
         this.emitter.on('lonLatChanged', this.setMarkerLonLat);
         this.emitter.on('draggableMarker', this.setDraggable);
+        
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OGU4NjFmYS1hZGMxLTRlNTQtOTlkYS0xM2YyMDRhYzk2YWEiLCJpZCI6NDAxOCwic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTUzOTYyMjkzM30.8R0O1XSEcq-2UIz2jW6Crh5Vj7DMT93Ra8zDFk9-3-U';
+
 
     }
     

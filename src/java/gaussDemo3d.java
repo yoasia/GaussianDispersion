@@ -6,6 +6,7 @@
 
 import constants.DIMENSION;
 import calculation.GaussianModel;
+import static constants.Configuration.MAX_NUMBER_OF_POINTS;
 import constants.GAS_TYPE;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -39,7 +40,7 @@ public class gaussDemo3d extends HttpServlet {
         
         
         dataObject = new GaussianModel();
-        dataObject.calculate(DIMENSION.THREE);
+        dataObject.calculate(DIMENSION.THREE, MAX_NUMBER_OF_POINTS);
         
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");

@@ -70,7 +70,8 @@ class Steps extends React.Component {
                 calculationArea:1000,
                 outputH: 100,
                 gas:0,
-                time: 1
+                time: 1,
+                rand:0
             },
             displayParameters:{
               min_value:0,
@@ -109,11 +110,13 @@ class Steps extends React.Component {
     onFinish(){
       var self = this;
       this.props.onFinish(this.state.parameters);
+      
       emitter.on('dataDownloaded', (response)=>{
         if(response){
+          
             var maxValue = response.data.max_value;
             var rangesNumber =  Object.keys(response.data.result).length;
-            var ranges =  response.ranges;
+            var ranges =  response.data.ranges;
             self.setState({downloaded: true, maxValue, rangesNumber, ranges, data:response});
         }
         else
@@ -420,6 +423,8 @@ class Steps extends React.Component {
     const { activeStep } = this.state;
     let { skipped } = this.state;
     emitEventDraggableMarker(activeStep + 1);
+    var parameters = this.state.parameters;
+    parameters.rand = Math.random();
     
     if (this.isStepSkipped(activeStep)) {
         skipped = new Set(skipped.values());
@@ -428,6 +433,7 @@ class Steps extends React.Component {
     this.setState({
         activeStep: activeStep + 1,
         skipped,
+        parameters
     });
 
     if(activeStep > 2){
@@ -438,9 +444,10 @@ class Steps extends React.Component {
   handleBack = () => {
     const { activeStep } = this.state;
     emitEventDraggableMarker(activeStep - 1);
-
+    
     this.setState({
       activeStep: activeStep - 1,
+      downloaded: false
     });
   };
 
@@ -467,6 +474,7 @@ class Steps extends React.Component {
     });
     emitEventDraggableMarker(0);
     emitEventReset();
+    this.props.onFinish(null);
   };
 
   handleSlider = (props) => {
@@ -506,7 +514,7 @@ class Steps extends React.Component {
       var marks = {};
       
       for (let index = 1; index < this.state.rangesNumber; index++) {
-        marks[index-1] = GAS_CONCENTRATION_KEY[index-1] + range[index-1]*1000 + ' - ' + range[index]*1000 + ' [mg]';
+        marks[index-1] = GAS_CONCENTRATION_KEY[index-1] +" "+ this.state.ranges[index-1]*1000 + ' [µg]';
       } 
     }
 
@@ -544,7 +552,7 @@ class Steps extends React.Component {
                         <Slider 
                         min={0} 
                         step={1}
-                        max={this.state.rangesNumber-1}
+                        max={this.state.rangesNumber-2}
                         marks={marks}
                         defaultValue={0} 
                         onAfterChange={this.handleChangeDisplay('layers')} 

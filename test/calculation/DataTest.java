@@ -5,9 +5,10 @@
  */
 package calculation;
 
-import constants.DIMENSION;
 import static calculation.GaussianModel.calculateGrid;
 import static calculation.GaussianModel.preparePtxFile;
+import constants.Configuration;
+import constants.DIMENSION;
 import static constants.Configuration.MAX_AREA_DIMENSION;
 import static constants.Configuration.NO_OUTPUT_HEIGHT;
 import static constants.Configuration.RESULT_PATH;
@@ -28,6 +29,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static constants.Configuration.DEFAULT_AREA_HEIGHT;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -78,97 +80,97 @@ public class DataTest {
      */
     @Test
     public void testCalculate() throws Exception {
-        boolean noResult = true;
         double wind_speed_horizontal;
         double wind_direction;
         double release_height;
         double source_strength;
-        double refflection_co = 1;
         int stability_class_num;
         double lon = 20;
         double lat = 52;
-        double z0 = 0;
-        double a = 0;
-        double b = 0;
-        double p = 0;
-        double q = 0;
-        FileWriter writer;
+        int ticks;
+        long startTime, startTimeC;
+        long stopTime, stopTimeC;
+        long cudaTime = 0, classicTime = 0;
+
         String csvFileName;
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("DD-MM_HH-mm");
         DIMENSION dim = DIMENSION.THREE;
         GaussianModel instance;
+        csvFileName = RESULT_PATH+"timeTest_"+sdf.format(cal.getTime())+".csv";
+        FileWriter writer = new FileWriter(csvFileName);
         
-        System.out.println("calculateGauss");
+        System.out.println("Time test. Result saved in "+ csvFileName);
+        CSVUtils.writeLine(writer, Arrays.asList("time CUDA [ms]", "time no CUDA [ms]", "number of points", "wind speed", "wind direction", "height", "Q", "stablity class", "area dimension"));
+        
+        int i = 2;
 
-        for (int i = 0; i < 100; i++) {
-            noResult = true;
-            System.out.println("TEST "+ i);
-            csvFileName = RESULT_PATH+sdf.format(cal.getTime()) +i+"_3d.csv";
-            writer = new FileWriter(csvFileName);
-
+        for (int j = 0; j < 40; j++) {
             wind_speed_horizontal = Math.random() * 49.5 + 0.5;
             wind_direction = Math.random() * 360 ;
             release_height = Math.random() * 300 + 0;
             source_strength = Math.random() * 1000 ; 
-            stability_class_num = (int) Math.random() * 5 + 1 ;
-            
-            
-            System.out.print("wind speed (u): "+wind_speed_horizontal + 
-                    "\nwind direction: "+ wind_direction + 
-                    "\nheight (H): " + release_height + 
-                    "\nsource strength (Q): " + source_strength + 
-                    "\nstability class:" + String.valueOf(stability_class_num) );
-
+            stability_class_num = (int) (Math.random() * 5 + 1) ;
             instance = new GaussianModel(
                 wind_speed_horizontal, 
                 wind_direction, 
                 release_height,
                 source_strength,
-                refflection_co,
-                stability_class_num,
-                z0,
-                a,
-                b,
-                p,
-                q,
+                stability_class_num,              
                 lon, 
                 lat,
-                NO_OUTPUT_HEIGHT,
-                MAX_AREA_DIMENSION
+                MAX_AREA_DIMENSION,                
+                NO_OUTPUT_HEIGHT ,
+                Configuration.TIME_TEST[i]
             );
 
-            instance.calculate(dim);
+            //CUDA
+            //Start time
+            startTimeC = System.nanoTime();
+
+            instance.calculate(dim, Configuration.TIME_TEST[i]);
             JSONObject resultObj = instance.getSortedResult();
+
+            //Stop time
+            stopTimeC = System.nanoTime();
+            cudaTime = (stopTimeC - startTimeC)/ 1000000;
+
+            //Classic way  
+            //Start time
+            startTime = System.nanoTime();
+
+            instance.calculateWithoutCUDA(dim, Configuration.TIME_TEST[i]);
+            resultObj = instance.getSortedResult();
             JSONArray result = (JSONArray) resultObj.get("result");
-            CSVUtils.writeLine(writer, Arrays.asList("lat", "lon", "z", "concentration"));
-            
-            for (int j = 0; j < result.size(); j++) {
-                JSONObject line = (JSONObject) result.get(i);
-                CSVUtils.writeLine(writer, Arrays.asList(line.get("lat"), line.get("lon"), line.get("z"), line.get("value")));
-                
-                if(Double.parseDouble((String)line.get("value")) > 0.0){
-                    noResult = false;
-                }
-            }
-            
-            writer.flush();
-            writer.close();
-            if(noResult){
-                System.err.println("Test failed.");
-            }
-            else{
-                System.out.println("Test Passed!");
-            }
-            
-            System.err.println(RESULT_PATH+sdf.format(cal.getTime()) +i+"_3d.csv");
-            System.err.println("");
-            
-            junit.framework.Assert.assertEquals(noResult, false);
+
+            //Stop time
+            stopTime = System.nanoTime();
+            classicTime = (stopTime - startTime)/ 1000000;
+
+            CSVUtils.writeLine(writer, Arrays.asList(Double.toString(cudaTime), Double.toString(classicTime), Integer.toString(Configuration.TIME_TEST[i]), Double.toString(wind_speed_horizontal), 
+                    Double.toString(wind_direction), Double.toString(release_height), Double.toString(source_strength), String.valueOf(stability_class_num),Integer.toString(MAX_AREA_DIMENSION) ));
+
+            System.out.println("Time CUDA [ms]: "+cudaTime + " ;Time no CUDA [ms]: "+ classicTime + 
+                    " ;number of points: "+Configuration.TIME_TEST[i]+
+                    ";wind speed (u): "+wind_speed_horizontal + 
+                    ";wind direction: "+ wind_direction + 
+                    ";height (H): " + release_height + 
+                    ";source strength (Q): " + source_strength + 
+                    ";stability class:" + String.valueOf(stability_class_num) );
 
         }
+        
+        writer.flush();
+        writer.close();
     }
 
+    /**
+     * Test of calculateWithoutCUDA method, of class Data.
+     */
+    @Test
+    public void testCalculateWithoutCUDA(){
+        
+    }
     /**
      * Test of calculateTranslation method, of class Data.
      */
@@ -390,20 +392,25 @@ public class DataTest {
     public void testCalculateGrid() throws IOException {
         System.out.println("calculateGrid");
  
-        double grid1 = calculateGrid(10.0, 2.0);
-        double grid2 = calculateGrid(10000.0, DEFAULT_AREA_HEIGHT);
-        double grid3 = calculateGrid(300.0, 30.0);
+        double grid1 = calculateGrid(10.0, 2.0, Configuration.MAX_NUMBER_OF_POINTS);
+        double grid2 = calculateGrid(10000.0, DEFAULT_AREA_HEIGHT, Configuration.MAX_NUMBER_OF_POINTS);
+        double grid3 = calculateGrid(300.0, 30.0, Configuration.MAX_NUMBER_OF_POINTS);
 
         System.out.println(grid1);        
-        junit.framework.Assert.assertTrue(grid1 >= 1.0);
+        junit.framework.Assert.assertTrue(grid1 > 0);
         
         System.out.println(grid2);        
-        junit.framework.Assert.assertTrue(grid2 >= 1.0);
+        junit.framework.Assert.assertTrue(grid2 > 0);
         
         System.out.println(grid3);        
-        junit.framework.Assert.assertTrue(grid3 >= 1.0);
+        junit.framework.Assert.assertTrue(grid3 > 0);
         
         System.out.println("Test Passed!");
+        
+    }
+    
+    @Test
+    public void testTime(){
         
     }
     

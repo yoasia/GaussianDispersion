@@ -18,7 +18,6 @@ class App extends React.Component {
         this.state = { 
             parameters:null,
         };
-
         this.emitter = new EventEmitter();
         this.setUserParameters = this.setUserParameters.bind(this);
     }

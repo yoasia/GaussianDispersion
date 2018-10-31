@@ -22,6 +22,7 @@ public class Configuration {
     public static final int NUMBER_OF_DATA_RANGES = 6;    
     public static final double MIN_CONCENTRATION = 0.01; //[micro grams] Minimal consentration that will be returned  
     public static final int MAX_NUMBER_OF_POINTS = 400000;
+    public static final int[] TIME_TEST = new int[]{50000, 100000, 200000, 300000, 400000};
     
     public static final int DEFAULT_AREA_HEIGHT = 10000; //[meters]
     
@@ -36,7 +37,7 @@ public class Configuration {
     public static final double NO_OUTPUT_HEIGHT = -419;
     
     //array with max good, standard, alert, warning, emergency and significant harm concentration
-    public static final String[] RANGES_NAMES =  new String[]{"Standard", "Alert", "Warning", "Emergency", "Significant Harm"};
+    public static final String[] RANGES_NAMES =  new String[]{"Good", "Standard", "Alert", "Warning", "Emergency", "Significant Harm"};
     public static final double[] CO = new double[]{0, 2, 6, 9, 15, 21, 24, Global.Infinity}; //mg/m3
     public static final double[] SO2 = new double[]{0, 2, 9, 19, 38, 50, 63, Global.Infinity}; //mg/m3
 

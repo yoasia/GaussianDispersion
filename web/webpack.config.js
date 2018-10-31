@@ -5,9 +5,10 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlIncludeAssetsPlugin = require('html-webpack-include-assets-plugin');
 
 // The path to the cesium source code
-const cesiumSource = 'node_modules/cesium/Source';
+const cesiumSource = '../node_modules/cesium/Source';
 const cesiumWorkers = '../Build/Cesium/Workers';
 
+console.log(path.resolve(__dirname, ''));
 
 module.exports = {
     context: __dirname,
@@ -30,6 +31,10 @@ module.exports = {
             // Cesium module name
             cesium: path.resolve(__dirname, cesiumSource)
         }
+    },
+    devServer: {
+        contentBase: path.join(__dirname, "../web/dst/"),
+        port: 8080
     },
     externals:{
         cesium: "Cesium"
@@ -57,8 +62,8 @@ module.exports = {
         new HtmlIncludeAssetsPlugin({
             append: false,
             assets: [
+                "../css/styles.css",
                 "dst/cesium/Widgets/widgets.css",
-                "css/styles.css",
                 "dst/cesium/Cesium.js"
             ]
         })

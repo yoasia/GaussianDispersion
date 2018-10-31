@@ -22,7 +22,7 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
     double translation_y = 0.0;
     double wind_dir_deg = (double)(((90 - (int) wind_dir)) % 360);
     double winds_to = (double)(wind_dir_deg + 180);
-
+    
     if(wind_dir_deg < 0)
         wind_dir_deg+= 360;
 
@@ -34,72 +34,26 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
 
 
     //calculate point coordinates in m
-    x = (ix - 0.5*n)*grid;
-    y = iy * grid;
+    x = ix * grid;
+    y = (iy - 0.5 * n)* grid;
     z = iz * grid;
 
 
     x_tmp = x;
     y_tmp = y;
 
-    //point rotation
+    // //point rotation
     x = x_tmp*cos(winds_to*PI/180) - y_tmp*sin(winds_to*PI/180);
     y = x_tmp*sin(winds_to*PI/180) + y_tmp*cos(winds_to*PI/180);
 
 
-    max = (n * grid)/2;
-
-    //point translation
-    if(wind_dir_deg <= 135 && wind_dir_deg >= 45){
-        if(wind_dir_deg > 90){
-            translation_x =  max * tan((wind_dir_deg - 90)*PI/180);
-        }
-        else{
-            translation_x =  0.0 - max * tan((90 - wind_dir_deg ) * PI/180);
-        }
-         translation_y =  0.0 - max;
-    }
-    else if(wind_dir_deg < 225 && wind_dir_deg >= 135){
-        if(wind_dir_deg > 180){
-            translation_x = max;
-             translation_y = max * tan((wind_dir_deg - 180)*PI/180);
-        }
-        else{
-            translation_x = max ;
-            translation_y = 0.0 - max * tan((180 - wind_dir_deg ) * PI/180);;
-        }
-
-    }
-    else if(wind_dir_deg < 315 && wind_dir_deg >= 225){
-        if(wind_dir_deg > 270){
-            translation_x =  0.0 - max * tan((wind_dir_deg - 270 )*PI/180);
-        }
-        else{
-            translation_x =  max * tan((270 - wind_dir_deg) * PI/180);
-        }
-         translation_y =  max;
-    }
-    else{
-        if(wind_dir_deg < 90){
-            translation_x =  0.0 - max;
-            translation_y =  0.0 - max * tan((wind_dir_deg)*PI/180);;
-        }
-        else{
-            translation_x = 0.0 - max;
-             translation_y =  max * tan((360 - wind_dir_deg ) * PI/180);
-        }
-    }
-
-
-    //move point
-    x += translation_x;
-    y += translation_y;
+    max = (n * grid);
 
     int resultIndex = (iz * n * n) + (iy * n) + ix;
 
     //calculate wind x and wind y (it winds to wind_dir -180)
-    windX = u * sin(winds_to*PI/180);
-    windY = u * cos(winds_to*PI/180);
+    windX = u * cos(winds_to*PI/180);
+    windY = u * sin(winds_to*PI/180);
 
     //distance vector
     distance = sqrt(x*x + y*y);
@@ -320,7 +274,6 @@ __global__ void gauss(int n, double Q, double u, double wind_dir, int stability,
     }  
 
 }
-
 
 
 

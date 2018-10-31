@@ -123,8 +123,11 @@ class Data extends React.Component {
         }).then(function (response) {
             console.log(response);
             self.calculateCenterLine(self.props.parameters.windDirection);
+            var ranges = response.data.ranges;
+            ranges[ranges.length] = Infinity;
+            response.data.ranges = ranges;
             self.setState({downloaded:true, data:response.data});
-            self.emitter.emit("dataDownloaded", response.data);
+            self.emitter.emit("dataDownloaded", response);
         }).catch(function (error) {
             console.log(error);
             self.emitter.emit("dataDownloaded", false);

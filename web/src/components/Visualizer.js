@@ -24,7 +24,6 @@ class Visualizer extends Component {
         this.changeTransparency = this.changeTransparency.bind(this);
         this.changeMinValue = this.changeMinValue.bind(this);
         this.changeDisplayedLayer = this.changeDisplayedLayer.bind(this);
-
     }
 
 
@@ -35,11 +34,13 @@ class Visualizer extends Component {
         if (this.props.data !== prevProps.data) {
             if(this.props.data)
                 this.setState({data:this.props.data,             
-                    currentLayer:0
+                    currentLayer:0,
+                    transparency: 1
                 });
             else
                 this.setState({data:this.props.data,             
-                    currentLayer:null
+                    currentLayer:null,
+                    transparency: 1
                 });
         }
     }
@@ -112,7 +113,7 @@ class Visualizer extends Component {
                         boxes.push((<Entity
                             key={+"_"+index}
                             name = {'Gas concentration'}
-                            description={element.value}
+                            description={element.value+"[µg]"}
                             position={cubePosition}
                             ellipsoid = {{
                                 radii : sphere,

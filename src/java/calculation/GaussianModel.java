@@ -45,8 +45,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import static constants.Configuration.MAX_AREA_DIMENSION;
-import static constants.Configuration.MAX_AREA_DIMENSION;
-import static constants.Configuration.MAX_NUMBER_OF_POINTS;
 import static constants.Configuration.NO_OUTPUT_HEIGHT;
 import static constants.Configuration.RESOURCE_PATH;
 import static constants.Configuration.RESULT_PATH;
@@ -64,6 +62,7 @@ import static constants.Configuration.MAX_NUMBER_RETURNED_POINTS;
 import static constants.Configuration.MIN_CONCENTRATION;
 import static constants.Configuration.SO2;
 import constants.GAS_TYPE;
+import static java.lang.Math.tan;
 
 /**
  *
@@ -103,11 +102,12 @@ public class GaussianModel {
             double lat_,
             double dimension_h_,
             double output_h_,
+            int maxPointNumber,
             double... optional) throws IOException {
         double area_dimension_ = optional.length > 0 ? optional[0] : MAX_AREA_DIMENSION;
         double _dimension_h_ = dimension_h_;
         double _output_h__ = output_h_;
-        double grid_ = calculateGrid(area_dimension_, _dimension_h_);
+        double grid_ = calculateGrid(area_dimension_, _dimension_h_, maxPointNumber);
 
         init(wind_speed_horizontal_,
                 wind_direction_,
@@ -196,26 +196,32 @@ public class GaussianModel {
 
     public JSONObject getRangedResult(String gas) {
         JSONObject returnObject = new JSONObject();
-        double[] ranges;
-        
+        JSONArray ranges;
+
         //create ranges
-        if(gas.equals("CO")){
+        if (gas.equals("CO")) {
             resultRanges = createRanges(result, max_value, GAS_TYPE.CO);
-            ranges = CO;
-        }
-        else if (gas.equals("SO2")){
+            ranges = new JSONArray();
+            for (int i = 0; i < CO.length - 1; i++) {
+                ranges.add(CO[i]);
+
+            }
+        } else if (gas.equals("SO2")) {
             resultRanges = createRanges(result, max_value, GAS_TYPE.SO2);
-            ranges = SO2;
-        }
-        else{
+            ranges = new JSONArray();
+            for (int i = 0; i < SO2.length - 1; i++) {
+                ranges.add(SO2[i]);
+
+            }
+        } else {
             resultRanges = createRanges(result, max_value, GAS_TYPE.OTHER);
             double rangeValue = max_value / NUMBER_OF_DATA_RANGES;
-            ranges = new double[NUMBER_OF_DATA_RANGES];
+            ranges = new JSONArray();
             for (int i = 0; i < NUMBER_OF_DATA_RANGES; i++) {
-                ranges[i] = i*rangeValue;
+                ranges.add(i * rangeValue);
             }
         }
-        
+
         //json with input parameters
         JSONObject input = new JSONObject();
         input.put("wind_speed", wind_speed);
@@ -226,7 +232,7 @@ public class GaussianModel {
         input.put("lon", lon);
         input.put("lat", lat);
         input.put("output_height", dimension_height);
-        
+
         returnObject.put("input_parameters", input);
         returnObject.put("result", resultRanges);
         returnObject.put("max_value", max_value);
@@ -239,7 +245,7 @@ public class GaussianModel {
 
     public JSONObject getSortedResult() {
         JSONObject returnObject = new JSONObject();
-        
+
         //json with  input parameters
         JSONObject input = new JSONObject();
         input.put("wind_speed", wind_speed);
@@ -250,9 +256,9 @@ public class GaussianModel {
         input.put("lon", lon);
         input.put("lat", lat);
         input.put("output_height", dimension_height);
-        
+
         returnObject.put("input_parameters", input);
-        
+
         returnObject.put("result", result);
         returnObject.put("max_value", max_value);
         returnObject.put("unit", "µg");
@@ -332,7 +338,7 @@ public class GaussianModel {
      * @return The name of the PTX file
      * @throws IOException If an I/O error occurs
      */
-    private static String preparePtxFile(String cuFileName) throws IOException {
+    protected static String preparePtxFile(String cuFileName) throws IOException {
         int endIndex = cuFileName.lastIndexOf('.');
         if (endIndex == -1) {
             endIndex = cuFileName.length() - 1;
@@ -401,7 +407,7 @@ public class GaussianModel {
         return baos.toByteArray();
     }
 
-    private static double[] calculateTranslation(double angle, double area_dimension) {
+    protected static double[] calculateTranslation(double angle, double area_dimension) {
         double result[] = new double[2];
         double max = area_dimension / 2;
 
@@ -449,15 +455,11 @@ public class GaussianModel {
     /**
      * Entry point of this sample
      *
-     * @param dim 
+     * @param dim
      * @throws IOException If an IO error occurs
      */
-    public void calculate(DIMENSION dim) throws IOException {
+    public void calculate(DIMENSION dim, int maxPointNumber) throws IOException {
 
-        double x_tmp, y_tmp, max;
-        double angle, wind_to;
-        double translation_vector[] = new double[2];
-        int tmp[] = new int[6];
         // Enable exceptions and omit all subsequent error checks
         JCudaDriver.setExceptionsEnabled(true);
 
@@ -482,11 +484,9 @@ public class GaussianModel {
         CUfunction function = new CUfunction();
         cuModuleGetFunction(function, module, "gauss");
 
-        int numElements = MAX_NUMBER_OF_POINTS;
-
         // Allocate device output memory
         CUdeviceptr deviceOutput = new CUdeviceptr();
-        cuMemAlloc(deviceOutput, numElements * Sizeof.DOUBLE);
+        cuMemAlloc(deviceOutput, maxPointNumber * Sizeof.DOUBLE);
 
         // Set up the kernel parameters: A pointer to an array
         // of pointers which point to the actual values.
@@ -502,7 +502,7 @@ public class GaussianModel {
 
         // Call the kernel function.
         int blockSizeX = CUDA_BLOCK_SIZE_X;
-        int gridSizeX = (int) Math.ceil((double) numElements / blockSizeX);
+        int gridSizeX = (int) Math.ceil((double) maxPointNumber / blockSizeX);
         cuLaunchKernel(function,
                 gridSizeX, 1, 1, // Grid dimension
                 blockSizeX, 1, 1, // Block dimension
@@ -513,11 +513,34 @@ public class GaussianModel {
 
         // Allocate host output memory and copy the device output
         // to the host.
-        double hostOutput[] = new double[numElements];
+        double hostOutput[] = new double[N*N*N];
         cuMemcpyDtoH(Pointer.to(hostOutput), deviceOutput,
-                numElements * Sizeof.DOUBLE);
-        cuMemcpyDtoH(Pointer.to(hostOutput), deviceOutput,
-                numElements * Sizeof.DOUBLE);
+                maxPointNumber * Sizeof.DOUBLE);
+
+
+        prepareResult(hostOutput, dim, maxPointNumber);
+
+        // Clean up.
+        cuMemFree(deviceOutput);
+
+    }
+
+    public void calculateWithoutCUDA(DIMENSION dim, int maxPointNumber) throws IOException {
+        double hostOutput[] = new double[N*N*N];
+
+        for (int i = 0; i < N*N*N; i++) {
+            hostOutput[i] = pseudoKernel(N, source_strength, wind_speed, wind_direction, stability_class_num, grid, release_height, i);
+        }
+
+        prepareResult(hostOutput, dim, maxPointNumber);
+    }
+
+    void prepareResult(double hostOutput[], DIMENSION dim, int maxPointNumber) throws IOException {
+
+        double x_tmp, y_tmp, max;
+        double angle, wind_to;
+        double translation_vector[] = new double[2];
+        int tmp[] = new int[6];
 
         // Save the result
         Calendar cal = Calendar.getInstance();
@@ -543,22 +566,20 @@ public class GaussianModel {
         }
 
         //calculate dimension of area 
-        max = (N * grid) / 2;
-        
+        max = (N * grid);
         //if angle > 360
         angle = (90 - wind_direction) % 360;
-        wind_to = angle -180;
+        wind_to = angle - 180;
         //if angle < 0
         angle = (angle < 0) ? (angle + 360 * Math.floor(1 + (-1) * angle / 360)) : angle;
         wind_to = (wind_to < 0) ? (wind_to + 360 * Math.floor(1 + (-1) * wind_to / 360)) : wind_to;
-        
+
         //calculate translation
         translation_vector = calculateTranslation(angle, max * 2);
 
-        for (int i = 0; i < numElements - 1; i++) {
+        for (int i = 0; i < N*N*N - 1; i++) {
             if (hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i] && hostOutput[i] > MIN_CONCENTRATION) {
 //            if (hostOutput[i] != Global.Infinity && hostOutput[i] == hostOutput[i]) {
-
 
                 JSONObject point = new JSONObject();
 
@@ -566,8 +587,8 @@ public class GaussianModel {
                 int iy = (int) Math.floor((double) (i % (N * N) / N));
                 int ix = (int) Math.floor((double) (i % (N * N) % N));
 
-                double x = (int) ((ix - 0.5 * N) * grid);
-                double y = (int) (iy * grid);
+                double x = (int) (ix  * grid);
+                double y = (int) ((iy - 0.5 * N) * grid);
                 int z = (int) (iz * grid);
 
                 x_tmp = x;
@@ -580,8 +601,8 @@ public class GaussianModel {
                 x_tmp = x;
                 y_tmp = y;
 
-                x += translation_vector[0];
-                y += translation_vector[1];
+//                x += translation_vector[0];
+//                y += translation_vector[1];
 
                 double coordinates[] = calculateNewCoords(lon, lat, x, y);
 
@@ -630,14 +651,14 @@ public class GaussianModel {
 
                 JSONObject point = new JSONObject();
 
-                double x = (int) (x1 - (0.5 * N) * grid);
-                double y = (int) (y1 * grid);
+                double x = (int) ((x1 - (0.5 * N)) * grid);
+                double y = (int) ((y1 - (0.5 * N)) * grid);
 
                 x_tmp = x;
                 y_tmp = y;
 
-                x = x_tmp * Math.cos(wind_to* Math.PI / 180) - y_tmp * Math.sin(wind_to* Math.PI / 180);
-                y = x_tmp * Math.sin(wind_to* Math.PI / 180) + y_tmp * Math.cos(wind_to* Math.PI / 180);
+                x = x_tmp * Math.cos(wind_to * Math.PI / 180) - y_tmp * Math.sin(wind_to * Math.PI / 180);
+                y = x_tmp * Math.sin(wind_to * Math.PI / 180) + y_tmp * Math.cos(wind_to * Math.PI / 180);
 
                 x_tmp = x;
                 y_tmp = y;
@@ -678,7 +699,7 @@ public class GaussianModel {
         result = sortResult(result);
 
         //reduce number of points
-        result = reduceNumberOfPoints(result);
+        //result = reduceNumberOfPoints(result);
 
         // retrieve image
         if (SAVE_RESULT_IMAGE) {
@@ -690,10 +711,266 @@ public class GaussianModel {
         writer.close();
         writer2.flush();
         writer2.close();
+    }
 
-        // Clean up.
-        cuMemFree(deviceOutput);
+    double pseudoKernel(int n, double Q, double u, double wind_dir, int stability, double grid, double H, int index) {
 
+        double x, y, z; //Point coordinates
+        double sigY, sigZ; //Sigmas
+        double PI = 3.1415926535897;
+        double distance;
+        double windX, windY;
+        double theta;
+        double downwind, crosswind;
+        double a = 0, b = 0, c = 0, d = 0;
+        double beta;
+        double x_tmp;
+        double y_tmp;
+        double max;
+        double translation_x = 0.0;
+        double translation_y = 0.0;
+        double wind_dir_deg = (double) (((90 - (int) wind_dir)) % 360);
+        double winds_to = (double) (wind_dir_deg + 180);
+
+        if (wind_dir_deg < 0) {
+            wind_dir_deg += 360;
+        }
+
+        //Number of thread
+        int iz = (int) Math.floor((double) (index / (n * n)));
+        int iy = (int) Math.floor((double) (index % (n * n) / n));
+        int ix = (int) Math.floor((double) (index % (n * n) % n));
+
+        //calculate point coordinates in m
+        x = ix  * grid;
+        y = (iy - 0.5 * n) * grid;
+        z = iz * grid;
+
+        x_tmp = x;
+        y_tmp = y;
+
+        // //point rotation
+        x = x_tmp * Math.cos(winds_to * PI / 180) - y_tmp * Math.sin(winds_to * PI / 180);
+        y = x_tmp * Math.sin(winds_to * PI / 180) + y_tmp * Math.cos(winds_to * PI / 180);
+
+        max = (n * grid);
+
+        int resultIndex = (iz * n * n) + (iy * n) + ix;
+
+        //calculate wind x and wind y (it winds to wind_dir -180)
+        windX = u * Math.cos(winds_to * PI / 180);
+        windY = u * Math.sin(winds_to * PI / 180);
+
+        //distance vector
+        distance = Math.sqrt(x * x + y * y);
+
+        //calculate wind_dir_deg between wind vector and position vector
+        theta = Math.acos((x * windX + y * windY) / (u * distance));
+
+        //scalar projection
+        downwind = distance * Math.cos(theta);
+        crosswind = distance * Math.sin(theta);
+
+        //Definition of parametrs a, b, c and d
+        switch (stability) {
+            case 1:
+                if (downwind < 100 & downwind > 0) {
+                    a = 122.800;
+                    b = 0.94470;
+                } else if (downwind >= 100 & downwind < 150) {
+                    a = 158.080;
+                    b = 1.05420;
+                } else if (downwind >= 100 & downwind < 0) {
+                    a = 170.220;
+                    b = 1.09320;
+                } else if (downwind >= 200 & downwind < 250) {
+                    a = 179.520;
+                    b = 1.12620;
+                } else if (downwind >= 250 & downwind < 300) {
+                    a = 217.410;
+                    b = 1.26440;
+                } else if (downwind >= 300 & downwind < 400) {
+                    a = 258.89;
+                    b = 1.40940;
+                } else if (downwind >= 400 & downwind < 500) {
+                    a = 346.75;
+                    b = 1.7283;
+                } else if (downwind >= 500 & downwind < 3110) {
+                    a = 453.85;
+                    b = 2.1166;
+                } else if (downwind >= 3110) {
+                    a = 453.85;
+                    b = 2.1166;
+                }
+
+                c = 24.1670;
+                d = 2.5334;
+
+                break;
+            case 2:
+                // vertical
+                if (downwind < 200 && downwind > 0) {
+                    a = 90.673;
+                    b = 0.93198;
+                }
+                if (downwind >= 200 && downwind < 400) {
+                    a = 98.483;
+                    b = 0.98332;
+                }
+                if (downwind >= 400) {
+                    a = 109.3;
+                    b = 1.09710;
+                }
+                // cross wind
+                c = 18.3330;
+                d = 1.8096;
+                break;
+            case 3:
+                // vertical
+                a = 61.141;
+                b = 0.91465;
+                // cross wind
+                c = 12.5;
+                d = 1.0857;
+                break;
+            case 4:
+                // vertical
+                if (downwind < 300 && downwind > 0) {
+                    a = 34.459;
+                    b = 0.86974;
+                }
+                if (downwind >= 300 && downwind < 1000) {
+                    a = 32.093;
+                    b = 0.81066;
+                }
+                if (downwind >= 1000 && downwind < 3000) {
+                    a = 32.093;
+                    b = 0.64403;
+                }
+                if (downwind >= 3000 && downwind < 10000) {
+                    a = 33.504;
+                    b = 0.60486;
+                }
+                if (downwind >= 10000 && downwind < 30000) {
+                    a = 36.650;
+                    b = 0.56589;
+                }
+                if (downwind >= 30000) {
+                    a = 44.053;
+                    b = 0.51179;
+                }
+                // cross wind
+                c = 8.3330;
+                d = 0.72382;
+                break;
+            case 5:
+                // vertical
+                if (downwind < 100 && downwind > 0) {
+                    a = 24.26;
+                    b = 0.83660;
+                }
+                if (downwind >= 100 && downwind < 300) {
+                    a = 23.331;
+                    b = 0.81956;
+                }
+                if (downwind >= 300 && downwind < 1000) {
+                    a = 21.628;
+                    b = 0.75660;
+                }
+                if (downwind >= 1000 && downwind < 2000) {
+                    a = 21.628;
+                    b = 0.63077;
+                }
+                if (downwind >= 2000 && downwind < 4000) {
+                    a = 22.534;
+                    b = 0.57154;
+                }
+                if (downwind >= 4000 && downwind < 10000) {
+                    a = 24.703;
+                    b = 0.50527;
+                }
+                if (downwind >= 10000 && downwind < 20000) {
+                    a = 26.970;
+                    b = 0.46713;
+                }
+                if (downwind >= 20000 && downwind < 40000) {
+                    a = 35.420;
+                    b = 0.37615;
+                }
+                if (downwind >= 40000) {
+                    a = 47.618;
+                    b = 0.29592;
+                }
+                // cross wind
+                c = 6.25;
+                d = 0.54287;
+                break;
+            case 6:
+                // vertical
+                if (downwind < 200 && downwind > 0) {
+                    a = 15.209;
+                    b = 0.81558;
+                }
+                if (downwind >= 200 && downwind < 700) {
+                    a = 14.457;
+                    b = 0.78407;
+                }
+                if (downwind >= 700 && downwind < 1000) {
+                    a = 13.953;
+                    b = 0.68465;
+                }
+                if (downwind >= 1000 && downwind < 2000) {
+                    a = 13.953;
+                    b = 0.63227;
+                }
+                if (downwind >= 2000 && downwind < 3000) {
+                    a = 14.823;
+                    b = 0.54503;
+                }
+                if (downwind >= 3000 && downwind < 7000) {
+                    a = 16.187;
+                    b = 0.46490;
+                }
+                if (downwind >= 7000 && downwind < 15000) {
+                    a = 17.836;
+                    b = 0.41507;
+                }
+                if (downwind >= 15000 && downwind < 30000) {
+                    a = 22.651;
+                    b = 0.32681;
+                }
+                if (downwind >= 30000 && downwind < 60000) {
+                    a = 27.074;
+                    b = 0.27436;
+                }
+                if (downwind >= 60000) {
+                    a = 34.219;
+                    b = 0.21716;
+                }
+                // cross wind
+                c = 4.1667;
+                d = 0.36191;
+                break;
+            default:
+                break;
+        }
+
+        //calculate sigmaX and sigmaY
+        sigZ = Math.pow(a * (downwind / 1000), b);
+        if (sigZ > 5000) {
+            sigZ = 5000;
+        }
+
+        beta = 0.017453293 * (c - d * Math.log(downwind / 1000));
+        sigY = 465.11628 * downwind / 1000 * tan(beta);
+
+        return Q / (2 * u * PI * sigY * sigZ)
+                * //1
+                Math.exp((-1.0) * Math.pow(crosswind, 2) / (2.0 * Math.pow(sigY, 2)))
+                * //2
+                (Math.exp((-1.0) * Math.pow(z - H, 2) / (2.0 * Math.pow(sigZ, 2)))
+                + //3a
+                Math.exp((-1.0) * Math.pow(z + H, 2) / 2.0 * Math.pow(sigZ, 2))) * 1000000; //3b
     }
 
     /**
@@ -729,10 +1006,8 @@ public class GaussianModel {
         double degrees[] = new double[2];
         //Earth’s radius, sphere
 
-//            degrees[0] = lat + (0.0000449 * yInMeters / Math.cos(lat));
         //latitude            
         degrees[0] = lat_start + y_distance / R * 180 / Math.PI;
-//            degrees[1] = lon + (0.0000449 * xInMeters) ;
         //longitude
         degrees[1] = lon_start + x_distance / (R * Math.cos(Math.PI * lat_start / 180)) * 180 / Math.PI;
 
@@ -801,8 +1076,8 @@ public class GaussianModel {
         for (int i = 0; i < jsonArr.size(); i++) {
             JSONObject obj = (JSONObject) jsonArr.get(i);
             double value = (double) obj.get("value");
-            
-            if(gas == GAS_TYPE.OTHER){            
+
+            if (gas == GAS_TYPE.OTHER) {
 //              if((double)(obj.get("value"))<= 1.0){
 //                  rangeData[0].add(jsonArr.get(i));
 //              } else  {
@@ -810,26 +1085,24 @@ public class GaussianModel {
                 int index = (int) Math.floor(indexD + 1);
                 rangeData[index].add(obj);
 //              }
-            }
-            else if (gas == GAS_TYPE.CO){
-                
+            } else if (gas == GAS_TYPE.CO) {
+
                 for (int j = 1; j < CO.length; j++) {
-                    double minC = CO[j-1] * 1000; //minimal concentration in range 
+                    double minC = CO[j - 1] * 1000; //minimal concentration in range 
                     double maxC = CO[j] * 1000; //maximal concentration
 
-                    if(value > minC && value <= maxC){
-                        rangeData[j-1].add(obj);
+                    if (value > minC && value <= maxC) {
+                        rangeData[j - 1].add(obj);
                     }
                 }
-                
-            }
-            else{
+
+            } else {
                 for (int j = 1; j < SO2.length; j++) {
-                    double minC = SO2[j-1] * 1000; //minimal concentration in j-1 range 
+                    double minC = SO2[j - 1] * 1000; //minimal concentration in j-1 range 
                     double maxC = SO2[j] * 1000; //maximal concentration in j-1 range 
 
-                    if(value > minC && value <= maxC){
-                        rangeData[j-1].add(obj);
+                    if (value > minC && value <= maxC) {
+                        rangeData[j - 1].add(obj);
                     }
                 }
             }
@@ -842,7 +1115,7 @@ public class GaussianModel {
         return resultWithRanges;
     }
 
-    private static double calculateGrid(double area_dimension, double output_h) {
+    protected static double calculateGrid(double area_dimension, double output_h, int maxPointNumber) {
 
         double cloudHeight = 1;
 
@@ -851,7 +1124,7 @@ public class GaussianModel {
         }
 
         double Volume = area_dimension * area_dimension * cloudHeight;
-        double pointVolume = Volume / MAX_NUMBER_OF_POINTS;
+        double pointVolume = Volume / maxPointNumber;
 
         double grid = Math.pow((pointVolume * area_dimension) / cloudHeight, 1.0 / 3.0);
 
